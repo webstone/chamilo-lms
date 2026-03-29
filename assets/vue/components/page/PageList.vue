@@ -28,7 +28,10 @@ pageService
 </script>
 
 <template>
-  <div class="mt-auto">
+  <div
+    class="mt-auto"
+    v-if="pageList && pageList.length > 0"
+  >
     <PageCard
       v-for="page in pageList"
       :key="page.id"

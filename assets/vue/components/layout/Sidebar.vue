@@ -43,7 +43,14 @@
         <CategoryLinks category="menu_links" />
         <PageList category-title="footer_private" />
 
-        <p v-html="t('Created with Chamilo copyright year', [currentYear])" />
+        <a
+          v-if="websiteUrl"
+          class="app-sidebar__goto-link"
+          :href="websiteUrl"
+        >
+          <span class="mdi mdi-web" />
+          <span class="goto-text">{{ t("Go to website") }}</span>
+        </a>
       </div>
       <a
         v-if="securityStore.isAuthenticated && !isAnonymous && !hideLogoutButton"
@@ -77,6 +84,7 @@
 import { onMounted, ref, watch, computed } from "vue"
 import ToggleButton from "primevue/togglebutton"
 import { useI18n } from "vue-i18n"
+import { usePlatformConfig } from "../../store/platformConfig"
 import { useSecurityStore } from "../../store/securityStore"
 import { useSidebarMenu } from "../../composables/sidebarMenu"
 import { usePlatformConfig } from "../../store/platformConfig"
@@ -87,6 +95,7 @@ import BaseSidebarPanelMenu from "../basecomponents/BaseSidebarPanelMenu.vue"
 import CategoryLinks from "../page/CategoryLinks.vue"
 
 const { t } = useI18n()
+const platformConfigStore = usePlatformConfig()
 const securityStore = useSecurityStore()
 const enrolledStore = useEnrolledStore()
 const platformConfigStore = usePlatformConfig()
@@ -105,7 +114,7 @@ if (!isMobile() && storedSidebarState === null) {
 }
 const expandingDueToPanelClick = ref(false)
 
-const currentYear = new Date().getFullYear()
+const websiteUrl = computed(() => platformConfigStore.getSetting("website_url") || null)
 
 const hideLogoutButton = computed(() => {
   return platformConfigStore.getSetting("display.hide_logout_button") === "true"

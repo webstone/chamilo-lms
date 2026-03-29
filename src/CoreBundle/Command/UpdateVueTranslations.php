@@ -43,7 +43,7 @@ class UpdateVueTranslations extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $languages = $this->languageRepository->findAll();
+        $languages = $this->languageRepository->getAllAvailable()->getQuery()->getResult();
         $dir = $this->parameterBag->get('kernel.project_dir');
 
         $vueLocalePath = $dir.'/assets/locales/';

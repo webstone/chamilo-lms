@@ -1,0 +1,197 @@
+// =============================================================================
+// Brand overrides — single source of truth for all visual customizations
+// Edit this file to apply the branding style guide across the entire platform.
+// =============================================================================
+
+// Import brand fonts
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap');
+
+:root {
+  --topbar-height: calc(5px + 2.5rem + 5px);
+  --topbar-padding: 5px;
+}
+
+// -----------------------------------------------------------------------------
+// Typography — Brand Font Overrides
+// -----------------------------------------------------------------------------
+body {
+  font-family: 'Roboto', Arial, sans-serif;
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6,
+.text-header, .text-h1, .text-h2, .text-h3, .text-h4, .text-h5, .text-h6 {
+  font-family: 'Roboto Condensed', 'Roboto', sans-serif;
+  font-weight: 400;
+}
+
+// -----------------------------------------------------------------------------
+// Topbar
+// -----------------------------------------------------------------------------
+.app-topbar {
+  // Background & border
+  @apply bg-tertiary;
+  border-bottom-color: rgb(var(--color-tertiary-gradient));
+  padding-top: var(--topbar-padding);
+  padding-bottom: var(--topbar-padding);
+
+  .p-menubar {
+    @apply text-white;
+
+    .p-menubar-start {
+      @apply ml-4 mr-auto;
+    }
+
+    .p-menubar-button {
+      @apply text-white;
+    }
+
+    &.p-menubar-mobile {
+      @apply bg-tertiary;
+
+      .p-menubar-root-list {
+        height: calc(100vh - var(--topbar-height) - 1px);
+        top: calc(var(--topbar-height) - 4px);
+
+        > .p-menubar-item {
+          > .p-menubar-item-content .p-menubar-item-link {
+            &:hover,
+            &:focus {
+              @apply border-white bg-white/10;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .p-menubar-root-list {
+    @apply bg-tertiary;
+  }
+
+  .p-menubar-item-content {
+    @apply md:py-0;
+
+    .p-menubar-item-link {
+      @apply text-white font-semibold;
+
+      &:hover,
+      &:focus {
+        @apply opacity-75 text-white;
+      }
+    }
+  }
+
+  .p-menubar-submenu {
+    @apply bg-white;
+
+    .p-menubar-item {
+      .p-menubar-item-content {
+        .p-menubar-item-link {
+          @apply text-gray-90;
+
+          &:hover,
+          &:focus {
+            @apply bg-support-1 text-primary;
+          }
+        }
+      }
+    }
+  }
+
+  &__items {
+    .item-button {
+      .mdi,
+      &__icon {
+        @apply text-white w-8 h-8;
+
+        &:hover {
+          @apply text-white opacity-75 pointer-events-none;
+        }
+
+        &::before {
+          @apply text-3xl leading-8;
+        }
+      }
+    }
+  }
+
+  &__end {
+    .user-avatar {
+      @apply bg-primary text-white;
+    }
+
+    .item-button {
+      .mdi,
+      &__icon {
+        @apply text-white w-8 h-8;
+
+        &:hover {
+          @apply text-white opacity-75 pointer-events-none;
+        }
+      }
+    }
+  }
+
+  &__user-submenu {
+    .p-menu-item-link {
+      &:hover,
+      &:focus {
+        @apply text-primary bg-support-1;
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Sidebar — adjust offsets to match smaller topbar
+// -----------------------------------------------------------------------------
+.app-sidebar {
+  height: calc(100vh - var(--topbar-height) - 1px);
+  top: calc(var(--topbar-height) + 1px);
+
+  @apply text-gray-90;
+
+  &__goto-link {
+    @apply block font-semibold whitespace-nowrap px-4 py-2;
+
+    .mdi {
+      @apply leading-normal text-body-2;
+    }
+
+    .goto-text {
+      @apply ml-2 text-body-2;
+    }
+
+    &:hover {
+      @apply bg-primary text-white rounded-md;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Homepage components - public homepage or app index
+// -----------------------------------------------------------------------------
+.login-section {
+  &__title {
+    @apply text-center;
+  }
+}
+
+.homepage-section {
+  @apply flex justify-center flex-col;
+}
+
+// -----------------------------------------------------------------------------
+// Card Components
+// -----------------------------------------------------------------------------
+.p-card-title {
+  @apply pb-2;
+}
+
+.p-card-subtitle {
+  @apply text-gray-90;
+}

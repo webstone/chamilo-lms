@@ -3,12 +3,13 @@ knpu_oauth2_client:
         generic:
             type: generic
             provider_class: League\OAuth2\Client\Provider\GenericProvider
-            client_id: ''
-            client_secret: ''
+            client_id: '%env(OAUTH_LARAVEL_CLIENT_ID)%'
+            client_secret: '%env(OAUTH_LARAVEL_CLIENT_SECRET)%'
             provider_options:
+                urlAuthorize: '%env(OAUTH_LARAVEL_AUTHORIZE_URL)%'
+                urlAccessToken: '%env(OAUTH_LARAVEL_TOKEN_URL)%'
+                urlResourceOwnerDetails: '%env(OAUTH_LARAVEL_USER_URL)%'
                 responseResourceOwnerId: 'sub'
-                scopes:
-                    - openid
             redirect_route: chamilo.oauth2_generic_check
 
         facebook:

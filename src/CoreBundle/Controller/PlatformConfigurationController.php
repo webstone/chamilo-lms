@@ -98,6 +98,7 @@ class PlatformConfigurationController extends AbstractController
         $configuration['settings']['profile.login_is_email'] = $settingsManager->getSetting('profile.login_is_email', true);
         $configuration['settings']['platform.timepicker_increment'] = (int) $settingsManager->getSetting('platform.timepicker_increment', true);
         $configuration['settings']['course.course_student_info'] = $this->decodeSetting($settingsManager->getSetting('course.course_student_info', true));
+        $configuration['settings']['website_url'] = $_ENV['WEBSITE_URL'] ?? 'https://chamilo.org';
 
         $configuration['plugins']['buycourses'] = $this->getBuyCoursesFrontendConfig();
         $configuration['plugins']['tour'] = $this->getTourFrontendConfig();

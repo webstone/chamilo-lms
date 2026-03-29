@@ -24062,6 +24062,9 @@ msgstr "My Skills"
 msgid "Sign out"
 msgstr "Sign out"
 
+msgid "Go to website"
+msgstr "Go to website"
+
 msgid "Sessions catalogue"
 msgstr "Sessions catalogue"
 
