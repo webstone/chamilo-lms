@@ -21,6 +21,17 @@ module.exports = {
     "./src/CoreBundle/Resources/views/**/*.html.twig",
   ],
   theme: {
+    fontWeight: {
+      thin: "100",
+      extralight: "300",
+      light: "300",
+      normal: "400",
+      medium: "400",
+      semibold: "400",
+      bold: "700",
+      extrabold: "700",
+      black: "700",
+    },
     colors: {
       primary: {
         DEFAULT: colorWithOpacity("--color-primary-base"),
@@ -94,13 +105,14 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        sans: ["Helvetica Neue", "Helvetica", "Arial", "sans-serif"],
+        sans: ["Roboto", "Arial", "sans-serif"],
+        condensed: ["Roboto Condensed", "Roboto", "Arial", "sans-serif"],
       },
       fontSize: {
-        "body-1": ["16px", "24px"],
+        "body-1": ["16px", "26px"],
         "body-2": ["14px", "16px"],
-        caption: ["13px", "16px"],
-        tiny: ["11px", "16px"],
+        caption: ["13px", { lineHeight: "16px", fontWeight: "300" }],
+        tiny: ["12px", { lineHeight: "16px", fontWeight: "300" }],
       },
       boxShadow: {
         xl: "0 4px 12px 0 rgb(0, 0, 0, 0.2)",

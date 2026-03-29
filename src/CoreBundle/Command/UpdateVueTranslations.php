@@ -43,7 +43,20 @@ class UpdateVueTranslations extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $languages = $this->languageRepository->findAll();
+        // Clear the compiled translation catalogue cache first. In prod the translator
+        // serves cached catalogues from var/cache/<env>/translations without checking
+        // whether the .po files changed, so without this step the command would write
+        // stale English fallbacks into the locale JSON files. The translator loads
+        // catalogues lazily, so removing the cache here forces a rebuild from the .po
+        // files on first use below.
+        $translationCacheDir = $this->parameterBag->get('kernel.cache_dir').'/translations';
+        $filesystem = new Filesystem();
+        if ($filesystem->exists($translationCacheDir)) {
+            $filesystem->remove($translationCacheDir);
+            $output->writeln("Cleared compiled translation cache: $translationCacheDir");
+        }
+
+        $languages = $this->languageRepository->getAllAvailable()->getQuery()->getResult();
         $dir = $this->parameterBag->get('kernel.project_dir');
 
         $vueLocalePath = $dir.'/assets/locales/';

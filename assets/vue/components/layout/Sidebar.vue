@@ -43,7 +43,21 @@
         <CategoryLinks category="menu_links" />
         <PageList category-title="footer_private" />
 
-        <p v-html="t('Created with Chamilo copyright year', [currentYear])" />
+        <p
+          v-if="institutionAddress"
+          class="app-sidebar__institution-address"
+        >
+          {{ institutionAddress }}
+        </p>
+
+        <a
+          v-if="websiteUrl"
+          class="app-sidebar__goto-link"
+          :href="websiteUrl"
+        >
+          <span class="mdi mdi-web" />
+          <span class="goto-text">{{ t("Go to website") }}</span>
+        </a>
       </div>
       <a
         v-if="securityStore.isAuthenticated && !isAnonymous && !hideLogoutButton"
@@ -105,7 +119,7 @@ if (!isMobile() && storedSidebarState === null) {
 }
 const expandingDueToPanelClick = ref(false)
 
-const currentYear = new Date().getFullYear()
+const websiteUrl = computed(() => platformConfigStore.getSetting("website_url") || null)
 
 const hideLogoutButton = computed(() => {
   return platformConfigStore.getSetting("display.hide_logout_button") === "true"

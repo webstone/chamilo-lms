@@ -9,6 +9,7 @@ parameters:
     db_manager_enabled: '%env(bool:DB_MANAGER_ENABLED)%'
     software_name: '%env(SOFTWARE_NAME)%'
     software_url: '%env(SOFTWARE_URL)%'
+    website_url: '%env(WEBSITE_URL)%'
     deny_delete_users: '%env(bool:DENY_DELETE_USERS)%'
     hosting_total_size_limit: '%env(int:HOSTING_TOTAL_SIZE_LIMIT)%'
     theme_fallback: '%env(THEME_FALLBACK)%'

@@ -1,9 +1,9 @@
 <template>
   <!-- Public homepage (no login required) -->
-  <div class="container mx-auto mt-4 flex flex-col md:flex-row gap-8">
+  <div class="container mx-auto flex flex-col md:flex-row gap-8">
     <Login
       v-if="!isAuthenticated"
-      class="md:w-4/12 lg:order-1"
+      class="md:w-4/12 lg:order-0"
     />
     <div class="flex-1 md:w-8/12 lg:order-0 flex flex-col gap-4">
       <SystemAnnouncementCardList />
