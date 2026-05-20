@@ -98,6 +98,9 @@ services:
         arguments:
             - '@.inner'
             - '@security.helper'
+    Chamilo\CoreBundle\State\CourseCategoryStateProcessor:
+        bind:
+            $persistProcessor: '@api_platform.doctrine.orm.state.persist_processor'
 
     Chamilo\CoreBundle\State\CStudentPublicationPostStateProcessor:
         bind:
