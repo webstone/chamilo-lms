@@ -740,7 +740,9 @@ if (isset($_POST['step2'])) {
 
             error_log('Load kernel');
             // Load Symfony Kernel
-            $kernel = new Kernel('dev', true);
+            $appEnv = (string) ($_ENV['APP_ENV'] ?? getenv('APP_ENV') ?: 'dev');
+            $appDebug = filter_var($_ENV['APP_DEBUG'] ?? getenv('APP_DEBUG') ?? true, FILTER_VALIDATE_BOOLEAN);
+            $kernel = new Kernel($appEnv, $appDebug);
             $application = new Application($kernel);
 
             // Create database schema
