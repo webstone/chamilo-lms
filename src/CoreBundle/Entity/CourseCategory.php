@@ -18,6 +18,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Serializer\Filter\PropertyFilter;
 use Chamilo\CoreBundle\Repository\CourseCategoryRepository;
+use Chamilo\CoreBundle\State\CourseCategoryStateProcessor;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
@@ -30,9 +31,9 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new Get(),
         new GetCollection(paginationClientEnabled: true),
-        new Post(security: "is_granted('ROLE_ADMIN')"),
+        new Post(security: "is_granted('ROLE_ADMIN')", processor: CourseCategoryStateProcessor::class),
         new Delete(security: "is_granted('ROLE_ADMIN')"),
-        new Patch(security: "is_granted('ROLE_ADMIN')"),
+        new Patch(security: "is_granted('ROLE_ADMIN')", processor: CourseCategoryStateProcessor::class),
     ],
     normalizationContext: [
         'groups' => ['course_category:read', 'course:read'],
