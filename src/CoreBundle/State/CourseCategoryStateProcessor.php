@@ -1,8 +1,8 @@
 <?php
 
-declare(strict_types=1);
-
 /* For licensing terms, see /license.txt */
+
+declare(strict_types=1);
 
 namespace Chamilo\CoreBundle\State;
 
@@ -37,7 +37,7 @@ final readonly class CourseCategoryStateProcessor implements ProcessorInterface
         $category = $this->persistProcessor->process($data, $operation, $uriVariables, $context);
 
         $accessUrl = $this->accessUrlHelper->getCurrent();
-        if ($accessUrl !== null && $category->getUrls()->isEmpty()) {
+        if ($accessUrl !== null && !$category->hasUrl($accessUrl)) {
             $category->addUrl($accessUrl);
             $this->entityManager->flush();
         }
