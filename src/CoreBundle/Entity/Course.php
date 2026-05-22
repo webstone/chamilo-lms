@@ -295,6 +295,7 @@ class Course extends AbstractResource implements ResourceInterface, ResourceWith
 
     #[Groups([
         'course:read',
+        'course:write',
         'session:read',
         'course_catalogue:read',
         'course_rel_user:read',
