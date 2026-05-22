@@ -1326,6 +1326,9 @@ class Course extends AbstractResource implements ResourceInterface, ResourceWith
 
     public function setResourceName(string $name): self
     {
-        return $this->setCode($name);
+        if (empty($this->code)) {
+            $this->setCode($name);
+        }
+        return $this;
     }
 }
