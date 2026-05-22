@@ -114,7 +114,7 @@ echo Display::toolbarAction(
 );
 
 $illustrationRepo = Container::getIllustrationRepository();
-$illustrationUrl = $illustrationRepo->getIllustrationUrl($course, 'course_picture_medium');
+$illustrationUrl = $illustrationRepo->getIllustrationUrl($course, 'course_picture_large');
 echo '  <img class="img-thumbnail" src="'.$illustrationUrl.'" />';
 
 /*echo Display::page_header(get_lang('Course usage'));

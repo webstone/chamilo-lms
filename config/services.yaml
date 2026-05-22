@@ -43,6 +43,9 @@ parameters:
         course_picture_medium:
             w: 400
             h: 225
+        course_picture_large:
+            w: 900
+            h: 600
         resource_show_preview:
             w: 500
 
