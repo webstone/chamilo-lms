@@ -383,6 +383,7 @@ class Course extends AbstractResource implements ResourceInterface, ResourceWith
     #[Assert\NotNull]
     #[Groups([
         'course:read',
+        'course:write',
         'course_catalogue:read',
     ])]
     #[ORM\Column(name: 'subscribe', type: 'boolean', unique: false, nullable: false)]
@@ -391,6 +392,7 @@ class Course extends AbstractResource implements ResourceInterface, ResourceWith
     #[Assert\NotNull]
     #[Groups([
         'course:read',
+        'course:write',
         'course_catalogue:read',
     ])]
     #[ORM\Column(name: 'unsubscribe', type: 'boolean', unique: false, nullable: false)]
