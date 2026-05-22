@@ -102,6 +102,10 @@ services:
         bind:
             $persistProcessor: '@api_platform.doctrine.orm.state.persist_processor'
 
+    Chamilo\CoreBundle\State\CourseStateProcessor:
+        bind:
+            $persistProcessor: '@api_platform.doctrine.orm.state.persist_processor'
+
     Chamilo\CoreBundle\State\CStudentPublicationPostStateProcessor:
         bind:
             $persistProcessor: '@api_platform.doctrine.orm.state.persist_processor'
