@@ -1,0 +1,25 @@
+<?php
+
+/* For licensing terms, see /license.txt */
+
+declare(strict_types=1);
+
+namespace Chamilo\CoreBundle\Controller\Api;
+
+use Chamilo\CoreBundle\Entity\Course;
+use Chamilo\CoreBundle\Repository\Node\IllustrationRepository;
+use Symfony\Component\HttpFoundation\Response;
+
+final class RemoveCourseIllustrationAction
+{
+    public function __construct(
+        private readonly IllustrationRepository $illustrationRepository,
+    ) {}
+
+    public function __invoke(Course $data): Response
+    {
+        $this->illustrationRepository->deleteIllustration($data);
+
+        return new Response(null, Response::HTTP_NO_CONTENT);
+    }
+}
