@@ -175,6 +175,7 @@ class Course extends AbstractResource implements ResourceInterface, ResourceWith
     #[ApiProperty(iris: ['http://schema.org/courseCode'])]
     #[Groups([
         'course:read',
+        'course:write',
         'user:write',
         'course_rel_user:read',
         'course_catalogue:read',
@@ -185,6 +186,10 @@ class Course extends AbstractResource implements ResourceInterface, ResourceWith
     #[ORM\Column(name: 'code', type: 'string', length: 40, unique: true, nullable: false)]
     protected string $code;
 
+    #[Groups([
+        'course:read',
+        'course:write',
+    ])]
     #[Assert\Length(max: 40, maxMessage: 'Code cannot be longer than {{ limit }} characters')]
     #[ORM\Column(name: 'visual_code', type: 'string', length: 40, unique: false, nullable: true)]
     protected ?string $visualCode = null;
