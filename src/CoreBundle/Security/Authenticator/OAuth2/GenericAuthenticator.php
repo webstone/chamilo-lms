@@ -180,6 +180,7 @@ class GenericAuthenticator extends AbstractAuthenticator
             ->setRoleFromStatus($status)
         ;
 
+        // setLocale/setTimezone are non-nullable (string, not ?string); inner guard prevents TypeError if provider sends null.
         if ($localeField = $providerParams['resource_owner_locale_field'] ?? null) {
             $locale = $this->getValueByKey($resourceOwnerData, $localeField, $user->getLocale());
             if ($locale) {
