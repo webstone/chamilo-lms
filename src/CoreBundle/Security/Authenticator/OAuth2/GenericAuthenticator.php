@@ -180,6 +180,32 @@ class GenericAuthenticator extends AbstractAuthenticator
             ->setRoleFromStatus($status)
         ;
 
+        if ($localeField = $providerParams['resource_owner_locale_field'] ?? null) {
+            $locale = $this->getValueByKey($resourceOwnerData, $localeField, $user->getLocale());
+            if ($locale) {
+                $user->setLocale($locale);
+            }
+        }
+
+        if ($timezoneField = $providerParams['resource_owner_timezone_field'] ?? null) {
+            $timezone = $this->getValueByKey($resourceOwnerData, $timezoneField, $user->getTimezone());
+            if ($timezone) {
+                $user->setTimezone($timezone);
+            }
+        }
+
+        if ($officialCodeField = $providerParams['resource_owner_official_code_field'] ?? null) {
+            $user->setOfficialCode(
+                $this->getValueByKey($resourceOwnerData, $officialCodeField, $user->getOfficialCode())
+            );
+        }
+
+        if ($phoneField = $providerParams['resource_owner_phone_field'] ?? null) {
+            $user->setPhone(
+                $this->getValueByKey($resourceOwnerData, $phoneField, $user->getPhone())
+            );
+        }
+
         $this->userRepository->updateUser($user);
 
         $url = $this->accessUrlHelper->getCurrent();
