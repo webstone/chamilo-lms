@@ -197,7 +197,7 @@ msgid "Display options"
 msgstr "Display opties"
 
 msgid "Enter the skill name to search"
-msgstr "Voor de naam van de vaardigheid in om te zoeken"
+msgstr "Voer de naam van de vaardigheid in om te zoeken"
 
 msgid "Skills search"
 msgstr "Vaardigheden zoeken"
@@ -632,7 +632,7 @@ msgid "Manage course categories"
 msgstr "Beheer cursus categorieën"
 
 msgid "Course categories in %s site:"
-msgstr "Cursuscategorieën in %s site:"
+msgstr "Cursusthema's in %s site:"
 
 msgid "Course categories available"
 msgstr "Beschikbare cursus categorieën"
@@ -1171,7 +1171,7 @@ msgid "Current status"
 msgstr "Huidige status"
 
 msgid "My courses categories"
-msgstr "Mijn cursuscategorieën"
+msgstr "Mijn cursusthema's"
 
 msgid "Sessions categories"
 msgstr "Sessiecategorieën"
@@ -1340,7 +1340,7 @@ msgid "Shareable enunciates"
 msgstr "Mediavragen"
 
 msgid "Course categories are global over multiple portals configurations. Changes are only allowed in the main administrative portal."
-msgstr "Cursuscategorieën zijn globaal over meerdere portalen configuraties. Aanpassingen zijn alleen in de hoofd-administratieve portaal toegestaan."
+msgstr "Cursusthema's zijn globaal over meerdere portalen configuraties. Aanpassingen zijn alleen in de hoofd-administratieve portaal toegestaan."
 
 msgid "Career updated successfully"
 msgstr "Carrière succesvol geupdatet"
@@ -1715,7 +1715,7 @@ msgid "Message Sent"
 msgstr "Bericht verstuurd"
 
 msgid "Settings"
-msgstr "Cursuseigenschappen"
+msgstr "Instellingen"
 
 msgid "The information has been modified"
 msgstr "De eigenschappen werden gewijzigd."
@@ -1727,7 +1727,7 @@ msgid "Trainers"
 msgstr "Lesgevers"
 
 msgid "Category"
-msgstr "Faculteit"
+msgstr "Categorie"
 
 msgid "Confidentiality"
 msgstr "Vertrouwelijkheid"
@@ -1787,10 +1787,10 @@ msgid "NO"
 msgstr "NEE"
 
 msgid "Department URL"
-msgstr "URL van uw faculteit of vakgroep"
+msgstr "URL van uw cursusnetwerk"
 
 msgid "Department"
-msgstr "Faculteit/vakgroep"
+msgstr "Cursusnetwerk"
 
 msgid "Archive this course area"
 msgstr "Cursusback-up maken"
@@ -2540,7 +2540,7 @@ msgid "e.g. <i>Innovation management</i>"
 msgstr "bv. <i>Literatuurgeschiedenis</i>"
 
 msgid "This is the department or any other context where the course is delivered"
-msgstr "Vul hier de naam in van de faculteit waar de cursus wordt gedoceerd"
+msgstr "Vul hier de naam in van het cursusnetwerk waar de cursus wordt gedoceerd"
 
 msgid "If you are unsure of your course code, consult the training details."
 msgstr "Indien u twijfelt over de juiste titel of code van uw cursus, kunt u deze in de cursuslijst raadplegen."
@@ -3369,7 +3369,7 @@ msgid "Write the title here"
 msgstr "Typ de titel hier"
 
 msgid "Updated"
-msgstr "geüpdatete"
+msgstr "geüpdated"
 
 msgid "Add new note in my personal notebook"
 msgstr "Voeg nieuwe notitie toe in mijn persoonlijke notitieblok"
@@ -3441,13 +3441,13 @@ msgid "Code mandatory"
 msgstr "Code is een verplicht veld"
 
 msgid "Course category mandatory"
-msgstr "Cursuscategorie is een verplicht veld"
+msgstr "Cursusthema is een verplicht veld"
 
 msgid "Teacher mandatory"
 msgstr "Lesgever is een verplicht veld"
 
 msgid "Course category is created"
-msgstr "De nieuwe cursuscategorie is aangemaakt"
+msgstr "Het nieuwe cursusthema is aangemaakt"
 
 msgid "Without time limits"
 msgstr "Zonder tijdslimiet"
@@ -3504,13 +3504,13 @@ msgid "Unsubscribe from course"
 msgstr "Uitschrijven uit cursussen"
 
 msgid "Create a personal courses category"
-msgstr "Cursuscategorie creëren"
+msgstr "Cursusthema creëren"
 
 msgid "Are you sure you want to delete this courses category? Courses inside this category will be moved outside the categories"
-msgstr "Bent u zeker dat u deze cursuscategorie wilt verwijderen? De cursussen van deze categorie worden verplaatst buiten de cursuscategorieën."
+msgstr "Bent u zeker dat u dit cursusthema wilt verwijderen? De cursussen van deze categorie worden verplaatst buiten de cursusthema's."
 
 msgid "Course categories"
-msgstr "Cursuscategorieën"
+msgstr "Cursusthema's"
 
 msgid "Courses in this category"
 msgstr "Cursussen in deze categorie"
@@ -3525,7 +3525,7 @@ msgid "Are you sure you want to unsubscribe?"
 msgstr "Bent u zeker dat u uit deze cursus wilt uitschrijven?"
 
 msgid "No courses category"
-msgstr "Geen cursuscategorie"
+msgstr "Geen cursusthema"
 
 msgid "The course has been added to the category"
 msgstr "De cursus werd in de geselecteerde categorie geplaatst"
@@ -3537,7 +3537,7 @@ msgid "Courses sorted"
 msgstr "De cursus werd herschikt"
 
 msgid "Existing courses categories"
-msgstr "Reeds bestaande cursuscategorieën"
+msgstr "Reeds bestaande cursusthema's"
 
 msgid "You have been unsubscribed from this course"
 msgstr "U bent nu uitgeschreven voor de cursus"
@@ -3558,7 +3558,7 @@ msgid "Submit registration code"
 msgstr "Verstuur registratiecode"
 
 msgid "The category was deleted"
-msgstr "Cursuscategorie verwijderd"
+msgstr "Cursusthema verwijderd"
 
 msgid "Category sorting done"
 msgstr "De categorieën zijn gesorteerd"
@@ -5219,7 +5219,7 @@ msgid "Show the categories of courses on the homepage, even if they're empty"
 msgstr "Toon de categoriën van cursussen op de startpagine, zelfs als ze leeg zijn"
 
 msgid "Show empty courses categories"
-msgstr "Toon lege cursuscategorieën"
+msgstr "Toon lege cursusthema's"
 
 msgid "XML document is not valid"
 msgstr "Het XML document is niet geldig"
@@ -5306,7 +5306,7 @@ msgid "Display categories on home page"
 msgstr "Toon categorieën op de startpagina"
 
 msgid "This option will display or hide courses categories on the portal home page"
-msgstr "Deze optie toont of verbergt de cursuscategorieën op de startpagina van de portaal"
+msgstr "Deze optie toont of verbergt de cursusthema's op de startpagina van de portaal"
 
 msgid "Tabs in the header"
 msgstr "Tabs in de hoofding"
@@ -9836,7 +9836,7 @@ msgid "Group area"
 msgstr "Groepsruimte"
 
 msgid "Wiki"
-msgstr "Gro3pswiki"
+msgstr "Groepswiki"
 
 msgid "Export to PDF"
 msgstr "Exporteren naar PDF"
@@ -10439,7 +10439,7 @@ msgid "Welcome to the Assessments tool. This tool allows you to assess competenc
 msgstr "Welkom bij het puntenbriefje. Met deze functionaliteit kunt u te bereiken doelstellingen bepalen voor een cursus of meerdere cursussen en kunt u een externe scoring toevoegen aan het systeem."
 
 msgid "Create all the courses categories"
-msgstr "Alle cursuscategorieën aanmaken"
+msgstr "Alle cursusthema's aanmaken"
 
 msgid "Added all categories"
 msgstr "Alle categorieën werden toegevoegd."
@@ -11900,7 +11900,7 @@ msgid "Click Here"
 msgstr "Klik hier"
 
 msgid "Number of courses by category"
-msgstr "Aantal cursussen per faculteit"
+msgstr "Aantal cursussen per cursusthema"
 
 msgid "Number of courses by language"
 msgstr "Aantal cursussen per taal"
@@ -11912,7 +11912,7 @@ msgid "Number of users by course"
 msgstr "Aantal gebruikers per cursus"
 
 msgid "Number of users by category"
-msgstr "Aantal gebruikers per faculteit"
+msgstr "Aantal gebruikers per categorie"
 
 msgid "Number of users by status"
 msgstr "Aantal gebruikers per status"
@@ -13123,7 +13123,7 @@ msgid "Induction-type session"
 msgstr "Inductie-type sessie"
 
 msgid "Publish survey"
-msgstr "Publiceer enquete"
+msgstr "Publiceer enquête"
 
 msgid "Compare questions"
 msgstr "Vergelijk vragen"
@@ -13132,19 +13132,19 @@ msgid "Information updated"
 msgstr "Informatie geupdate"
 
 msgid "Survey title"
-msgstr "Titel enquete"
+msgstr "Titel enquête"
 
 msgid "Survey introduction"
-msgstr "Inleiding enquete"
+msgstr "Inleiding enquête"
 
 msgid "Create survey"
-msgstr "Nieuwe enquete aanmaken"
+msgstr "Nieuwe enquête aanmaken"
 
 msgid "Survey template"
-msgstr "Sjabloon enquete"
+msgstr "Sjabloon enquête"
 
 msgid "Please enter survey title"
-msgstr "Gelieve een enquete titel op te geven"
+msgstr "Gelieve een enquête titel op te geven"
 
 msgid "Please Enter Valid Date"
 msgstr "Gelieve een geldige datum op te geven"
@@ -13165,16 +13165,16 @@ msgid "Complete report"
 msgstr "Volledig rapport"
 
 msgid "Send the survey to these addresses only"
-msgstr "Stuur de enquete enkel naar volgende adressen"
+msgstr "Stuur de enquête enkel naar volgende adressen"
 
 msgid "Back to the questions"
 msgstr "Terug naar de vragen"
 
 msgid "Select in which language should be created the survey"
-msgstr "Selecteer de taal voor de enquete"
+msgstr "Selecteer de taal voor de enquête"
 
 msgid "Create this survey in another language"
-msgstr "Creëer deze enquete in een andere taal"
+msgstr "Creëer deze enquête in een andere taal"
 
 msgid "Export in Excel format"
 msgstr "Exporteren in het Excel-formaat"
@@ -13189,13 +13189,13 @@ msgid "Or copy paste the link into the url bar of your browser :"
 msgstr "Of kopieer en plak de link in uw browser"
 
 msgid "Click here to take the survey"
-msgstr "Klik hier om de enquete in te vullen"
+msgstr "Klik hier om de enquête in te vullen"
 
 msgid "No Surveys have been shared yet"
 msgstr "Er zijn nog géén gedeelde enquetes"
 
 msgid "View survey"
-msgstr "Enquete bekijken"
+msgstr "Enquête bekijken"
 
 msgid "Select Display Type :"
 msgstr "Selecteer weergave"
@@ -13204,19 +13204,19 @@ msgid "Feedback message"
 msgstr "Feedback"
 
 msgid "Survey reporting"
-msgstr "Rapportering van de enquete"
+msgstr "Rapportering van de enquête"
 
 msgid "No survey available"
-msgstr "Geen enquete beschikbaar"
+msgstr "Geen enquête beschikbaar"
 
 msgid "has been published"
 msgstr "is gepubliceerd"
 
 msgid "Create from existing survey"
-msgstr "Aanmaken vanaf bestaande enquete"
+msgstr "Aanmaken vanaf bestaande enquête"
 
 msgid "Search a survey"
-msgstr "Enquete zoeken"
+msgstr "Enquête zoeken"
 
 msgid "Survey(s) of all courses"
 msgstr "Enquetes van alle cursussen"
@@ -13234,7 +13234,7 @@ msgid "Add new question"
 msgstr "Nieuwe vraag toevoegen"
 
 msgid "Share survey with others"
-msgstr "Enquete delen met anderen"
+msgstr "Enquête delen met anderen"
 
 msgid "Proceed"
 msgstr "Verdergaan"
@@ -13258,25 +13258,25 @@ msgid "Please fill default text"
 msgstr "Gelieve de standaardtekst in te geven"
 
 msgid "Edit survey information"
-msgstr "Informatie van de enquete wijzigen"
+msgstr "Informatie van de enquête wijzigen"
 
 msgid "View questions"
 msgstr "Vragen weergeven"
 
 msgid "Finish survey"
-msgstr "Enquete afwerken"
+msgstr "Enquête afwerken"
 
 msgid "Questions are added"
 msgstr "Vragen zijn toegevoegd"
 
 msgid "Delete survey"
-msgstr "Enquete verwijderen"
+msgstr "Enquête verwijderen"
 
 msgid "Survey list"
 msgstr "Lijst van enquetes"
 
 msgid "Survey attached"
-msgstr "Enquete toegevoegd"
+msgstr "Enquête toegevoegd"
 
 msgid "Question by type"
 msgstr "Vragen per type"
@@ -13300,25 +13300,25 @@ msgid "View answers"
 msgstr "Toon antwoorden"
 
 msgid "Create from an existing survey"
-msgstr "Aanmaken van een enquete, vertrekkend van een bestaand enquete"
+msgstr "Aanmaken van een enquête, vertrekkend van een bestaand enquête"
 
 msgid "Survey name"
 msgstr "Enquetenaam"
 
 msgid "Survey subtitle"
-msgstr "Ondertitel van de enquete"
+msgstr "Ondertitel van de enquête"
 
 msgid "Share survey"
-msgstr "Enquete delen"
+msgstr "Enquête delen"
 
 msgid "Final thanks"
 msgstr "Dankwoord"
 
 msgid "Edit survey"
-msgstr "Enquete wijzigen"
+msgstr "Enquête wijzigen"
 
 msgid "Or return to survey overview"
-msgstr "of terugkeren naar het overzicht van de enquete"
+msgstr "of terugkeren naar het overzicht van de enquête"
 
 msgid "There is a parameter missing in the link. Please use copy and past"
 msgstr "Er ontbreekt een parameter in de link. Gelieve de link te kopiëren en te plakken"
@@ -13327,13 +13327,13 @@ msgid "Wrong invitation code"
 msgstr "Verkeerde uitnodigingscode"
 
 msgid "You have finished this survey."
-msgstr "U hebt deze enquete afgewerkt."
+msgstr "U hebt deze enquête afgewerkt."
 
 msgid "Survey preview"
-msgstr "Voorbeeldweergave van de enquete"
+msgstr "Voorbeeldweergave van de enquête"
 
 msgid "Invalid survey"
-msgstr "Ongeldige enquete"
+msgstr "Ongeldige enquête"
 
 msgid "Edit question"
 msgstr "Vraag wijzigen"
@@ -13342,13 +13342,13 @@ msgid "This type does not exist"
 msgstr "Dit type bestaat niet"
 
 msgid "The survey has been created successfully"
-msgstr "De enquete is met succes aangemaakt"
+msgstr "De enquête is met succes aangemaakt"
 
 msgid "You can now add questions to your survey"
-msgstr "U kunt nu vragen toevoegen aan uw enquete"
+msgstr "U kunt nu vragen toevoegen aan uw enquête"
 
 msgid "The survey has been updated successfully"
-msgstr "De enquete is met succes gewijzigd"
+msgstr "De enquête is met succes gewijzigd"
 
 msgid "The question has been added."
 msgstr "De vraag is toegevoegd."
@@ -13372,7 +13372,7 @@ msgid "Page break"
 msgstr "Pagina einde"
 
 msgid "Survey invitations"
-msgstr "Enquete uitnodigingen"
+msgstr "Enquête uitnodigingen"
 
 msgid "Invitation code"
 msgstr "Uitnodigingscode"
@@ -13384,7 +13384,7 @@ msgid "Answered"
 msgstr "Beantwoord"
 
 msgid "You can invite additional users to fill the survey. To do so you can type their e-mail addresses here separated by either , (comma) or ; (semi-column)"
-msgstr "U kunt hier extra gebruikers die niet in de cursus ingeschreven zijn uitnodigen om deze enquete in te vullen door hier hun email adressen toe te voegen. De email adressen dienen gescheiden te worden door een , of ;"
+msgstr "U kunt hier extra gebruikers die niet in de cursus ingeschreven zijn uitnodigen om deze enquête in te vullen door hier hun email adressen toe te voegen. De email adressen dienen gescheiden te worden door een , of ;"
 
 msgid "Mail subject"
 msgstr "Titel van de email"
@@ -13393,10 +13393,10 @@ msgid "invitations sent."
 msgstr "uitnodigingen verstuurd."
 
 msgid "The survey has been deleted."
-msgstr "De enquete is verwijderd."
+msgstr "De enquête is verwijderd."
 
 msgid "No surveys have been selected."
-msgstr "U hebt géén enquete geselecteerd."
+msgstr "U hebt géén enquête geselecteerd."
 
 msgid "Invited"
 msgstr "Uitgenodigd"
@@ -13423,7 +13423,7 @@ msgid "This screen displays an exact copy of the form as it was filled by the us
 msgstr "Alle vragen worden op één pagina weergegeven"
 
 msgid "Select user who filled the survey"
-msgstr "Selecteer een gebruiker die de enquete ingevuld heeft"
+msgstr "Selecteer een gebruiker die de enquête ingevuld heeft"
 
 msgid "User report"
 msgstr "Rapport per gebruiker"
@@ -13444,7 +13444,7 @@ msgid "People who have chosen this answer"
 msgstr "Personen dit dit antwoord gekozen hebben"
 
 msgid "Publication of the survey"
-msgstr "Publicatie van de enquete"
+msgstr "Publicatie van de enquête"
 
 msgid "Additional users"
 msgstr "Extra gebruikers"
@@ -13453,7 +13453,7 @@ msgid "E-mail message"
 msgstr "Tekst van de email"
 
 msgid "The selected users will receive an email with the text above and a unique link that they have to click to fill the survey. If you want to put the link somewhere in your text you have to put the following text wherever you want in your text: **link** (star star link star star). This will then automatically be replaced by the unique link. If you do not add **link** to your text then the email link will be added to the end of the mail"
-msgstr "De geselecteerde gebruikers zullen een email ontvangen met de tekst die u hierboven tikt en een unieke link die ze dienen aan te klikken om de enquete in te vullen. Als u deze link ergens in uw tekst wilt laten verschijen dient u de **link** (ster ster link ster ster) in uw tekst te plaatsen. Dit wordt dan automatisch vervangen door de unieke link. Als u **link** niet aan uw tekst toevoegt wordt de unieke link automatisch aan het einde van de mail toegevoegd."
+msgstr "De geselecteerde gebruikers zullen een email ontvangen met de tekst die u hierboven tikt en een unieke link die ze dienen aan te klikken om de enquête in te vullen. Als u deze link ergens in uw tekst wilt laten verschijen dient u de **link** (ster ster link ster ster) in uw tekst te plaatsen. Dit wordt dan automatisch vervangen door de unieke link. Als u **link** niet aan uw tekst toevoegt wordt de unieke link automatisch aan het einde van de mail toegevoegd."
 
 msgid "Detailed report by user"
 msgstr "Gedetailleerd rapport per gebruiker"
@@ -13495,7 +13495,7 @@ msgid "You already filled this survey"
 msgstr "U heeft deze enquête reeds ingevuld"
 
 msgid "Click here to answer the survey"
-msgstr "Klik hier om de enquete in te vullen"
+msgstr "Klik hier om de enquête in te vullen"
 
 msgid "Unknow user"
 msgstr "Onbekende gebruiker"
@@ -13513,7 +13513,7 @@ msgid "The page break cannot be the last one"
 msgstr "De paginascheiding kan niet helemaal achteraan komen"
 
 msgid "Sorry, this survey is not available anymore. Thank you for trying."
-msgstr "Sorry, deze enquete is niet langer beschikbaar. Bedankt voor uw inspanningen"
+msgstr "Sorry, deze enquête is niet langer beschikbaar. Bedankt voor uw inspanningen"
 
 msgid "Duplicate survey"
 msgstr "De enquête kopiëren"
@@ -13525,13 +13525,13 @@ msgid "Answers to survey successfully deleted"
 msgstr "Antwoorden op de enquête succesvol verwijderd"
 
 msgid "This survey is not yet available. Please try again later. Thank you."
-msgstr "Deze enquete is nog niet beschikbaar. Gelieve later opnieuw te proberen."
+msgstr "Deze enquête is nog niet beschikbaar. Gelieve later opnieuw te proberen."
 
 msgid "people answered"
 msgstr "personen hebben geantwoord"
 
 msgid "This survey is anonymous. You can't see who answered."
-msgstr "Deze enquete is anoniem. U kunt niet zien wie heeft geantwoord."
+msgstr "Deze enquête is anoniem. U kunt niet zien wie heeft geantwoord."
 
 msgid "Unknown survey id"
 msgstr "Onbekend enquête id"
@@ -13540,7 +13540,7 @@ msgid "The question has been moved"
 msgstr "De vraag werd verplaatst."
 
 msgid "This survey code already exists. That probably means the survey exists in other languages. Invited people will choose between different languages."
-msgstr "Deze enquetecode bestaat al. Dat betekent waarschijnlijk dat de enquete in een andere taal bestaat. Uitgenodigde deelnemers zullen kiezen tussen verschillende talen."
+msgstr "Deze enquetecode bestaat al. Dat betekent waarschijnlijk dat de enquête in een andere taal bestaat. Uitgenodigde deelnemers zullen kiezen tussen verschillende talen."
 
 msgid "This survey code soon exists in this language"
 msgstr "Deze enquetecode bestaat binnenkort in deze taal."
@@ -13600,7 +13600,7 @@ msgid "No log of duration"
 msgstr "Gen log van de tijdsduur"
 
 msgid "Users who are not invited can use this link to take the survey:"
-msgstr "Gebruikers die niet uitgenodigd zijn kunnen deze link gebruiken om de enquete te doen:"
+msgstr "Gebruikers die niet uitgenodigd zijn kunnen deze link gebruiken om de enquête te doen:"
 
 msgid "Complete the survey's questions"
 msgstr "Vul de enquetevragen in"
@@ -13615,13 +13615,13 @@ msgid "Create question"
 msgstr "Creëer vraag"
 
 msgid "Back to survey"
-msgstr "Terug naar de enquete"
+msgstr "Terug naar de enquête"
 
 msgid "Update information"
 msgstr "Update informatie"
 
 msgid "Please fill survey"
-msgstr "Vul de enquete"
+msgstr "Vul de enquête"
 
 msgid "Reporting overview"
 msgstr "Rapportenoverzicht"
@@ -14460,7 +14460,7 @@ msgid "Optional parameters"
 msgstr "Optionele parameters"
 
 msgid "The database connection has failed. This is generally due to the wrong user, the wrong password or the wrong database prefix being set above. Please review these settings and try again."
-msgstr "De verbinding met de databank is mislukt. Meestal is dit te wijten aan een foute gebruik, een fout wahctwoord of een foutief databasevoorvoegsel. Verifieer deze instelling en probeer het dan opnieuw."
+msgstr "De verbinding met de databank is mislukt. Meestal is dit te wijten aan een foute gebruikersnaam, een fout wachtwoord of een foutief databasevoorvoegsel. Verifieer deze instelling en probeer het dan opnieuw."
 
 msgid "Upgrade from Chamilo 1.6.x"
 msgstr "Upgrade vanaf Chamilo 1.6.x"
@@ -14805,7 +14805,7 @@ msgid "Waiting list"
 msgstr "Wachtlijst"
 
 msgid "Invite friends"
-msgstr "Vrienden inviteren"
+msgstr "Vrienden uitnodigen"
 
 msgid "Add one more file"
 msgstr "Voeg één of meerdere bestanden toe"
@@ -15120,7 +15120,7 @@ msgid "Configure extensions"
 msgstr "Configureer extenties"
 
 msgid "There are not questions for this survey"
-msgstr "Er zijn geen vragen voor deze enquete"
+msgstr "Er zijn geen vragen voor deze enquête"
 
 msgid "Allow learners to delete their own publications"
 msgstr "Toestaan dat cursisten hun eigen werk verwijderen"
@@ -15602,7 +15602,7 @@ msgid "Learning path"
 msgstr "Leerpad"
 
 msgid "Surveys"
-msgstr "Enquete"
+msgstr "Enquête"
 
 msgid "Projects"
 msgstr "Blogs"
@@ -17849,7 +17849,7 @@ msgid "Assistance"
 msgstr "Aanwezigheid"
 
 msgid "A course category with the same name already exists."
-msgstr "Er bestaat al een cursuscategorie met dezelfde naam"
+msgstr "Er bestaat al een cursusthema met dezelfde naam"
 
 msgid "OpenID redirect"
 msgstr "OpenID-omleiding"
@@ -21143,7 +21143,7 @@ msgid "Other teachers"
 msgstr "Andere lesgevers"
 
 msgid "Course category"
-msgstr "Cursuscategorie"
+msgstr "Cursusthema"
 
 msgid "Video chat between %s and %s"
 msgstr "Videochat tussen %s en %s"
@@ -21610,7 +21610,7 @@ msgid "A title is required"
 msgstr "Titel verplicht"
 
 msgid "No course category was provided"
-msgstr "Er is geen cursuscategorie gegeven"
+msgstr "Er is geen cursusthema gegeven"
 
 msgid "Closing date"
 msgstr "Sluitingsdatum"
@@ -22134,7 +22134,7 @@ msgid "Available also on main portal"
 msgstr "Ook beschikbaar op het hoofdportaal"
 
 msgid "Edit course categories for one URL"
-msgstr "Cursuscategorieën bewerken voor één URL"
+msgstr "Cursusthema's bewerken voor één URL"
 
 msgid "Visible to self"
 msgstr "Zichtbaar voor jezelf"
@@ -22694,7 +22694,7 @@ msgid "Forward message"
 msgstr "Doorstuur bericht"
 
 msgid "You will find below the list of course categories."
-msgstr "Hieronder vindt u de lijst met cursuscategorieën."
+msgstr "Hieronder vindt u de lijst met cursusthema's."
 
 msgid "Feature disabled by administrator"
 msgstr "Functie uitgeschakeld door beheerder"
@@ -25287,7 +25287,7 @@ msgstr ""
 
 msgid "Import a course in IMS Common Cartridge 1.3 format, from another platform compatible with this format. The version is important."
 msgstr ""
-"Een cursus exporteren in IMS Common Cartridge 1.3-formaat, van een ander "
+"Een cursus importeren in IMS Common Cartridge 1.3-formaat, van een ander "
 "platform dat compatibel is met dit formaat. De versie is belangrijk."
 
 msgid "IMS CC file created."
@@ -26464,7 +26464,7 @@ msgstr ""
 "wijzen aan sessie-cursussen op de cursusbewerkingspagina."
 
 msgid "Use course categories from top URL"
-msgstr "Gebruik cursuscategorieën uit de bovenste URL"
+msgstr "Gebruik cursusthema's uit de bovenste URL"
 
 msgid "In multi-URL settings, allow admins and teachers to assign categories from the top URL to courses in the children URLs."
 msgstr ""
@@ -26497,7 +26497,7 @@ msgstr ""
 "zijn bij het bewerken van de cursusinhoud."
 
 msgid "Restrict course templates to one course category"
-msgstr "Beperk cursussjablonen tot één cursuscategorie"
+msgstr "Beperk cursussjablonen tot één cursusthema"
 
 msgid "Give a category code to use as course templates. Only those courses will show in the drop-down at course creation time, and users won’t see the courses in this category from the courses catalogue."
 msgstr ""
@@ -26584,11 +26584,11 @@ msgid "Display course catalogue on homepage"
 msgstr "Toon cursuscatalogus op de startpagina"
 
 msgid "Set course category mandatory"
-msgstr "Stel cursuscategorie verplicht in"
+msgstr "Stel cursusthema verplicht in"
 
 msgid "When creating a course, make the course category a required setting."
 msgstr ""
-"Bij het aanmaken van een cursus, maak de cursuscategorie een verplichte "
+"Bij het aanmaken van een cursus, maak het cursusthema een verplichte "
 "instelling."
 
 msgid "Remove course code field from course creation form"
@@ -29802,7 +29802,7 @@ msgid "Submit code"
 msgstr "Code indienen"
 
 msgid "Sign up"
-msgstr "Registeren"
+msgstr "Registreren"
 
 msgid "2FA disabled successfully."
 msgstr "2FA succesvol uitgeschakeld."
@@ -33516,7 +33516,7 @@ msgid "Clear search"
 msgstr "Zoekopdracht wissen"
 
 msgid "Only letters, digits and underscore (_) are allowed in the database name. Invalid characters will be removed automatically."
-msgstr "Alleen letters, cijfers en onderstrepingsteken (_) zijn toegestaan in de databasetnaam. Ongeldige tekens worden automatisch verwijderd."
+msgstr "Alleen letters, cijfers en onderstrepingsteken (_) zijn toegestaan in de databasenaam. Ongeldige tekens worden automatisch verwijderd."
 
 msgid "What general terms and conditions are given to users to use this platform?"
 msgstr "Welke algemene voorwaarden worden aan gebruikers gegeven om dit platform te gebruiken?"
@@ -34569,7 +34569,7 @@ msgid "Provider used"
 msgstr "Gebruikte provider"
 
 msgid "This video result cannot be saved yet"
-msgstr "Dit vide結果 kan nog niet worden opgeslagen"
+msgstr "Dit videoresultaat kan nog niet worden opgeslagen"
 
 msgid "Video polling was stopped because the provider changed."
 msgstr "Videopoll is gestopt omdat de provider is gewijzigd."
