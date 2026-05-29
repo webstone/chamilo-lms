@@ -669,6 +669,7 @@ class User implements UserInterface, EquatableInterface, ResourceInterface, Reso
     #[ORM\Column(name: 'status', type: 'integer')]
     protected int $status;
 
+    #[Groups(['user:read', 'user:write', 'user_json:read'])]
     #[ORM\Column(name: 'official_code', type: 'string', length: 40, nullable: true)]
     protected ?string $officialCode = null;
 
