@@ -341,7 +341,7 @@ if (DELETE_ACTION_ENABLED) {
 }
 $table->set_header(0 + $offet, get_lang('Course code'));
 $table->set_header(1 + $offet, get_lang('Title'));
-$table->set_header(2 + $offet, get_lang('Category'));
+$table->set_header(2 + $offet, get_lang('Course category'));
 $table->set_header(3 + $offet, get_lang('Trainer'));
 $table->set_header(4 + $offet, get_lang('Request date'));
 $table->set_header(5 + $offet, '', false);
