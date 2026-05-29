@@ -23,7 +23,9 @@ use Chamilo\CoreBundle\Controller\Api\CreateUserOnAccessUrlAction;
 use Chamilo\CoreBundle\Controller\Api\UserSkillsController;
 use Chamilo\CoreBundle\Dto\CreateUserOnAccessUrlInput;
 use Chamilo\CoreBundle\Entity\Listener\UserListener;
+use Chamilo\CoreBundle\Filter\ExtraFieldFilter;
 use Chamilo\CoreBundle\Filter\PartialSearchOrFilter;
+use Chamilo\CoreBundle\Filter\RoleFilter;
 use Chamilo\CoreBundle\Repository\Node\UserRepository;
 use Chamilo\CoreBundle\State\UserCollectionStateProvider;
 use Chamilo\CoreBundle\Traits\UserCreatorTrait;
@@ -113,6 +115,8 @@ use UserManager;
 #[ApiFilter(PartialSearchOrFilter::class, properties: ['username', 'firstname', 'lastname'])]
 #[ApiFilter(filterClass: BooleanFilter::class, properties: ['isActive'])]
 #[ApiFilter(filterClass: OrderFilter::class, properties: ['username', 'firstname', 'lastname'])]
+#[ApiFilter(ExtraFieldFilter::class)]
+#[ApiFilter(filterClass: RoleFilter::class, properties: ['roles'])]
 class User implements UserInterface, EquatableInterface, ResourceInterface, ResourceIllustrationInterface, PasswordAuthenticatedUserInterface, LegacyPasswordAuthenticatedUserInterface, ExtraFieldItemInterface, Stringable
 {
     use TimestampableEntity;
