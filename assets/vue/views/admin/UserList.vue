@@ -561,12 +561,14 @@ const roleOptions = {
 function formatRole(role) {
   const upper = role.toUpperCase()
   const label = roleLabelsMap.value[upper] || roleLabelsMap.value[role]
-  if (label) return label
-  return role
-    .replace(/^ROLE_/, "")
-    .replace(/_/g, " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase())
+  if (label) return t(label)
+  return t(
+    role
+      .replace(/^ROLE_/, "")
+      .replace(/_/g, " ")
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+  )
 }
 
 function canToggleActive(data) {

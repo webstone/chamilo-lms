@@ -253,7 +253,7 @@ $table = new SortableTable('course_requests_rejected', 'get_number_of_requests',
 $table->set_header(0, '', false);
 $table->set_header(1, get_lang('Course code'));
 $table->set_header(2, get_lang('Title'));
-$table->set_header(3, get_lang('Category'));
+$table->set_header(3, get_lang('Course category'));
 $table->set_header(4, get_lang('Trainer'));
 $table->set_header(5, get_lang('Request date'));
 $table->set_header(6, '', false);

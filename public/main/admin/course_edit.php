@@ -162,7 +162,7 @@ foreach ($categories as $category) {
 
 $form->addSelectAjax(
     'course_categories',
-    get_lang('Categories'),
+    get_lang('Course categories'),
     $courseCategoryNames,
     [
         'url' => api_get_path(WEB_AJAX_PATH).'course.ajax.php?a=search_category',
