@@ -1610,7 +1610,7 @@ msgid "SCORM or AICC file to upload"
 msgstr "Te uploaden bestand"
 
 msgid "Course location"
-msgstr "Situatie van het leerpad"
+msgstr "Locatie van de cursus"
 
 msgid "Upload local .zip package from the archive/ directory"
 msgstr "Lokaal bestand uit de main/garbage folder opladen"
@@ -1985,7 +1985,7 @@ msgid "Hide users pictures in the forum"
 msgstr "Foto gebruiker in forum verbergen"
 
 msgid "Enable course themes"
-msgstr "stijlblad voor leerpad toelaten"
+msgstr "Cursusthema's inschakelen"
 
 msgid "Allowed"
 msgstr "Toegelaten"
@@ -2084,7 +2084,7 @@ msgid "Tests"
 msgstr "Oefeningen"
 
 msgid "Courses"
-msgstr "Leerpaden"
+msgstr "Cursussen"
 
 msgid "Copy course"
 msgstr "Cursus kopiëren"
@@ -2654,7 +2654,7 @@ msgid "The forum category has been added"
 msgstr "De forumcategorie is toegevoegd"
 
 msgid "Course added"
-msgstr "Leerpad toegevoegd"
+msgstr "Cursus toegevoegd"
 
 msgid "Added new term in the Glossary"
 msgstr "Nieuw begrip toegevoegd aan glossarium"
@@ -7114,7 +7114,7 @@ msgid "Edit learnpath"
 msgstr "Leerpadbeschrijving/-titel wijzigen"
 
 msgid "Delete"
-msgstr "Leerpad verwijderen"
+msgstr "Verwijderen"
 
 msgid "do not publish"
 msgstr "Verbergen voor studenten"
@@ -11702,7 +11702,7 @@ msgid "Average number of courses to which my learners are subscribed"
 msgstr "Gemiddeld aantal cursussen per student"
 
 msgid "Progress in courses"
-msgstr "Gemiddelde vorderingen in de leerpaden"
+msgstr "Voortgang in cursussen"
 
 msgid "Tests score"
 msgstr "Gemiddeld resultaat voor de oefeningen"
@@ -19045,7 +19045,7 @@ msgid "Number of assignments in learning path"
 msgstr "Aantal taken in leerpad"
 
 msgid "Number of announcements in course"
-msgstr "Aantal aankondigingen in leerpad"
+msgstr "Aantal aankondigingen in cursus"
 
 msgid "Current courses report"
 msgstr "Overzicht huidige cursussen"
