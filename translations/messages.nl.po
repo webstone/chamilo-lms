@@ -8732,7 +8732,7 @@ msgid "Cancel"
 msgstr "Annuleren"
 
 msgid "You are not allowed to see this page. Either your connection has expired or you are trying to access a page for which you do not have the sufficient privileges."
-msgstr "U bent geen cursusbeheerder. U kunt deze actie niet uitvoeren."
+msgstr "U mag deze pagina niet bekijken. Mogelijk is uw sessie verlopen of probeert u een pagina te openen waarvoor u onvoldoende rechten heeft."
 
 msgid "You are not logged in"
 msgstr "U bent niet ingelogd op een cursus."
