@@ -193,8 +193,8 @@ $sessionList = SessionManager::get_session_by_course($courseId);
 $url = api_get_path(WEB_CODE_PATH);
 if (!empty($sessionList)) {
     foreach ($sessionList as &$session) {
-        $session[0] = Display::url($session[0], $url.'session/resume_session.php?id_session='.$session['id']);
-        unset($session[1]);
+        $session['title'] = Display::url($session['title'], $url.'session/resume_session.php?id_session='.$session['id']);
+        unset($session['id']);
     }
     echo Display::page_header(get_lang('Course sessions'));
     $table = new SortableTableFromArray($sessionList, 0, 20, 'user_table');
