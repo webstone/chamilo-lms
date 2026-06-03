@@ -445,55 +445,64 @@ class SortableTable extends HTML_Table
             }
         }
         $html .= '<input type="hidden" name="action">';
-        $html .= '<div class="flex q-card p-2 mb-4 sortable-buttons-actions">';
-        $html .= '<div class="flex w-full items-center justify-between">';
 
-        if (count($this->actionButtons) > 0) {
-            $html .= '<div class="btn-toolbar flex gap-4">';
-            $html .= '<div class="btn-group">';
+        // Skip the wrapper card entirely when there's nothing to put in it.
+        $hasBottomBarContent = count($this->actionButtons) > 0
+            || count($this->form_actions) > 0
+            || $form !== ''
+            || $this->get_total_number_of_items() > $this->default_items_per_page;
 
-            foreach ($this->actionButtons as $action => $data) {
-                $label = $data['label'];
-                $icon = $data['icon'];
-                $html .= '<a class="btn btn-default" href="?'.$params.'&action_table='.$action.'">'.$icon.'&nbsp;'.$label.'</a>';
+        if ($hasBottomBarContent) {
+            $html .= '<div class="flex q-card p-2 mb-4 sortable-buttons-actions">';
+            $html .= '<div class="flex w-full items-center justify-between">';
+
+            if (count($this->actionButtons) > 0) {
+                $html .= '<div class="btn-toolbar flex gap-4">';
+                $html .= '<div class="btn-group">';
+
+                foreach ($this->actionButtons as $action => $data) {
+                    $label = $data['label'];
+                    $icon = $data['icon'];
+                    $html .= '<a class="btn btn-default" href="?'.$params.'&action_table='.$action.'">'.$icon.'&nbsp;'.$label.'</a>';
+                }
+                $html .= '</div>';
+                $html .= '</div>';
             }
-            $html .= '</div>';
-            $html .= '</div>';
-        }
 
-        if (count($this->form_actions) > 0) {
-            $html .= '<div class="grow flex gap-4">';
-            $html .= '<a class="btn btn--plain-outline btn--sm" href="?'.$params.'&amp;'.$this->param_prefix.'selectall=1" onclick="setCheckbox(true, \''.$table_id.'\'); return false;">'
-                .get_lang('Select all').'</a>';
-            $html .= '<a class="btn btn--plain-outline btn--sm" href="?'.$params.'" onclick="setCheckbox(false, \''.$table_id.'\'); return false;">'
-                .get_lang('Deselect all').'</a>';
+            if (count($this->form_actions) > 0) {
+                $html .= '<div class="grow flex gap-4">';
+                $html .= '<a class="btn btn--plain-outline btn--sm" href="?'.$params.'&amp;'.$this->param_prefix.'selectall=1" onclick="setCheckbox(true, \''.$table_id.'\'); return false;">'
+                    .get_lang('Select all').'</a>';
+                $html .= '<a class="btn btn--plain-outline btn--sm" href="?'.$params.'" onclick="setCheckbox(false, \''.$table_id.'\'); return false;">'
+                    .get_lang('Deselect all').'</a>';
 
-            $items = [];
-            foreach ($this->form_actions as $action => $label) {
-                $items[] = [
-                    'type' => 'button',
-                    'onclick' => "action_click(this, '$table_id');",
-                    'title' => $label,
-                    'data-action' => $action,
-                    'data-confirm' => addslashes(api_htmlentities(get_lang("Please confirm your choice"))),
-                ];
+                $items = [];
+                foreach ($this->form_actions as $action => $label) {
+                    $items[] = [
+                        'type' => 'button',
+                        'onclick' => "action_click(this, '$table_id');",
+                        'title' => $label,
+                        'data-action' => $action,
+                        'data-confirm' => addslashes(api_htmlentities(get_lang("Please confirm your choice"))),
+                    ];
+                }
+                $html .= Display::groupButtonWithDropDown(get_lang('Action'), $items);
+            } else {
+                $html .= $form;
             }
-            $html .= Display::groupButtonWithDropDown(get_lang('Action'), $items);
-        } else {
-            $html .= $form;
-        }
 
-        $html .= '</div>';
-
-        // Pagination
-        if ($this->get_total_number_of_items() > $this->default_items_per_page) {
-            $html .= '<div class="flex justify-end mt-4 w-full">';
-            $html .= '<div class="page-nav pb-2 pt-2">'.$nav.'</div>';
             $html .= '</div>';
-        }
 
-        $html .= '</div>'; // btn-group
-        $html .= '</div>'; // sortable-buttons-actions
+            // Pagination
+            if ($this->get_total_number_of_items() > $this->default_items_per_page) {
+                $html .= '<div class="flex justify-end mt-4 w-full">';
+                $html .= '<div class="page-nav pb-2 pt-2">'.$nav.'</div>';
+                $html .= '</div>';
+            }
+
+            $html .= '</div>'; // btn-group
+            $html .= '</div>'; // sortable-buttons-actions
+        }
         if (count($this->form_actions) > 0) {
             $html .= '</form>';
         }
