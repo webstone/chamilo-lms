@@ -199,7 +199,7 @@ if (!empty($sessionList)) {
     }
     unset($session);
     echo Display::page_header(get_lang('Course sessions'));
-    $table = new SortableTableFromArray($sessionList, 0, 20, 'user_table');
+    $table = new SortableTableFromArray($sessionList, 0, 20, 'course_sessions');
     $table->display();
 }
 
