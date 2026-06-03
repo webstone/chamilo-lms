@@ -111,7 +111,7 @@ services:
     session.order_filter:
         parent: 'api_platform.doctrine.orm.order_filter'
         arguments:
-            $properties: { id: ~, title: ~ }
+            $properties: { id: ~, title: ~, displayStartDate: ~, accessStartDate: ~ }
         tags: [ 'api_platform.filter' ]
 
     session.group_filter:

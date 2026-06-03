@@ -47,6 +47,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Put(security: "is_granted('ROLE_ADMIN')"),
         new GetCollection(
             security: "is_granted('ROLE_ADMIN')",
+            order: ['displayStartDate' => 'ASC', 'title' => 'ASC'],
             filters: [
                 'session.search_filter',
                 'session.property_filter',
