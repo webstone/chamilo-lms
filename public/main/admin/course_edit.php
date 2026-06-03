@@ -123,7 +123,7 @@ $form->applyFilter('title', 'trim');
 $element = $form->addElement(
     'text',
     'real_code',
-    [get_lang('Code'), get_lang('This value can\'t be changed.')]
+    [get_lang('Course code'), get_lang('This value can\'t be changed.')]
 );
 $element->freeze();
 
