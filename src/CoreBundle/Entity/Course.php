@@ -144,7 +144,7 @@ use const SORT_NATURAL;
 )]
 #[ApiFilter(
     filterClass: SearchFilter::class,
-    properties: ['title' => 'partial', 'code' => 'partial', 'categories' => 'exact']
+    properties: ['title' => 'partial', 'code' => 'exact', 'visualCode' => 'exact', 'categories' => 'exact']
 )
 ]
 #[ApiFilter(
