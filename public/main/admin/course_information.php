@@ -170,7 +170,7 @@ if (Database::num_rows($res) > 0) {
         $users[] = $user;
     }
     $table = new SortableTableFromArray($users, 0, 20, 'user_table');
-    $table->set_additional_parameters(['code' => $course->getCode()]);
+    $table->set_additional_parameters(['id' => $courseId, 'code' => $course->getCode()]);
     $table->set_other_tables(['usage_table', 'class_table']);
     $table->set_header(0, get_lang('Code'), true);
     if ($is_western_name_order) {
@@ -200,6 +200,7 @@ if (!empty($sessionList)) {
     unset($session);
     echo Display::page_header(get_lang('Course sessions'));
     $table = new SortableTableFromArray($sessionList, 0, 20, 'course_sessions');
+    $table->set_additional_parameters(['id' => $courseId]);
     $table->display();
 }
 
