@@ -63,7 +63,7 @@ if (isset($_POST['form_sent']) && $_POST['form_sent']) {
 
 // Filters
 $filters = [
-    ['type' => 'text', 'name' => 'code', 'label' => get_lang('Code')],
+    ['type' => 'text', 'name' => 'code', 'label' => get_lang('Course code')],
     ['type' => 'text', 'name' => 'title', 'label' => get_lang('Title')],
 ];
 

@@ -8523,7 +8523,7 @@ msgid "archive"
 msgstr "Archief"
 
 msgid "Code"
-msgstr "Cursuscode"
+msgstr "Code"
 
 msgid "No description"
 msgstr "Geen beschrijving"
