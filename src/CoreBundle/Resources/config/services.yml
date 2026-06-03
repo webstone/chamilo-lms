@@ -101,7 +101,7 @@ services:
     session.search_filter:
         parent: 'api_platform.doctrine.orm.search_filter'
         arguments:
-            $properties: { title: 'partial' }
+            $properties: { title: 'exact' }
         tags: [ 'api_platform.filter' ]
 
     session.property_filter:
