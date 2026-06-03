@@ -13,6 +13,10 @@ framework:
         cookie_secure: auto
         cookie_samesite: lax
         name: chamilo2
+        # Write sessions inside the project's var/ tree (writable by the
+        # FPM/Apache user) instead of PHP's default /var/lib/php/sessions,
+        # which is root-owned on Debian and breaks GC with "Permission denied".
+        save_path: '%kernel.project_dir%/var/sessions'
     #esi: true
     #fragments: true
     php_errors:
