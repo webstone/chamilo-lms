@@ -199,8 +199,17 @@ if (!empty($sessionList)) {
     }
     unset($session);
     echo Display::page_header(get_lang('Course sessions'));
-    $table = new SortableTableFromArray($sessionList, 0, 20, 'course_sessions');
+    // Anonymous subclass bypasses TableSort::sort_table so the SQL
+    // ORDER BY display_start_date survives — keeps the list chronological
+    // instead of falling back to the locale-day-name lex sort.
+    $table = new class ($sessionList, 0, 20, 'course_sessions') extends SortableTableFromArray {
+        public function get_table_data($from = 1, $perPage = null, $column = null, $direction = null, $sort = true)
+        {
+            return parent::get_table_data($from, $perPage, $column, $direction, false);
+        }
+    };
     $table->set_additional_parameters(['id' => $courseId]);
+    $table->set_header(0, get_lang('Name'), false);
     $table->display();
 }
 
