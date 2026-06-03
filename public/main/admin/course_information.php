@@ -115,7 +115,9 @@ echo Display::toolbarAction(
 
 $illustrationRepo = Container::getIllustrationRepository();
 $illustrationUrl = $illustrationRepo->getIllustrationUrl($course, 'course_picture_large');
-echo '  <img class="img-thumbnail" src="'.$illustrationUrl.'" />';
+echo '<div class="bg-white border border-gray-30 rounded-2xl shadow-sm p-6 mb-6">';
+echo '<img class="img-thumbnail" src="'.$illustrationUrl.'" />';
+echo '</div>';
 
 /*echo Display::page_header(get_lang('Course usage'));
 $table = new SortableTableFromArray(
@@ -133,7 +135,9 @@ $table->display();*/
 /*
  * Show all users subscribed in this course.
  */
-echo Display::page_header(get_lang('Users'));
+echo '<div class="bg-white border border-gray-30 rounded-2xl shadow-sm p-6 mb-6">';
+echo Display::page_subheader(get_lang('Users'), null, 'h3', ['class' => 'section-title mb-4']);
+echo '<div class="overflow-x-auto">';
 
 $table_course_user = Database::get_main_table(TABLE_MAIN_COURSE_USER);
 $table_user = Database::get_main_table(TABLE_MAIN_USER);
@@ -187,6 +191,8 @@ if (Database::num_rows($res) > 0) {
 } else {
     echo get_lang('No users in course');
 }
+echo '</div>'; // overflow-x-auto
+echo '</div>'; // section card
 
 $sessionList = SessionManager::get_session_by_course($courseId);
 
@@ -198,7 +204,9 @@ if (!empty($sessionList)) {
         ];
     }
     unset($session);
-    echo Display::page_header(get_lang('Course sessions'));
+    echo '<div class="bg-white border border-gray-30 rounded-2xl shadow-sm p-6 mb-6">';
+    echo Display::page_subheader(get_lang('Course sessions'), null, 'h3', ['class' => 'section-title mb-4']);
+    echo '<div class="overflow-x-auto">';
     // Anonymous subclass bypasses TableSort::sort_table so the SQL
     // ORDER BY display_start_date survives — keeps the list chronological
     // instead of falling back to the locale-day-name lex sort.
@@ -211,6 +219,8 @@ if (!empty($sessionList)) {
     $table->set_additional_parameters(['id' => $courseId]);
     $table->set_header(0, get_lang('Name'), false);
     $table->display();
+    echo '</div>'; // overflow-x-auto
+    echo '</div>'; // section card
 }
 
 Display::display_footer();
