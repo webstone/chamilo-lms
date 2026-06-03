@@ -53,7 +53,7 @@ if (!$hideCourseCode) {
     $form->addText(
         'visual_code',
         [
-            get_lang('Code'),
+            get_lang('Course code'),
             get_lang('Only letters (a-z) and numbers (0-9)'),
         ],
         false,
