@@ -5012,7 +5012,7 @@ class SessionManager
             return [];
         }
 
-        $sql = "SELECT title, s.id
+        $sql = "SELECT title, s.id, s.display_start_date
                 FROM $table_session_course sc
                 INNER JOIN $table_session s
                 ON (sc.session_id = s.id)
@@ -5020,7 +5020,8 @@ class SessionManager
                 ON (u.session_id = s.id)
                 WHERE
                     u.access_url_id = $urlId AND
-                    sc.c_id = '$courseId' ";
+                    sc.c_id = '$courseId'
+                ORDER BY s.display_start_date ASC, s.title ASC";
         $result = Database::query($sql);
 
         return Database::store_result($result);
