@@ -20,7 +20,13 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\OpenApi\Model\Operation;
+use ApiPlatform\OpenApi\Model\Parameter;
+use ApiPlatform\OpenApi\Model\RequestBody;
+use ArrayObject;
 use Chamilo\CoreBundle\Controller\Api\CreateUserOnAccessUrlAction;
+use Chamilo\CoreBundle\Controller\Api\GetStatsAction;
+use Chamilo\CoreBundle\Controller\Api\RemoveUserIllustrationAction;
+use Chamilo\CoreBundle\Controller\Api\SetUserIllustrationAction;
 use Chamilo\CoreBundle\Controller\Api\UserSkillsController;
 use Chamilo\CoreBundle\Dto\CreateUserOnAccessUrlInput;
 use Chamilo\CoreBundle\Entity\Listener\UserListener;
@@ -69,6 +75,34 @@ use UserManager;
             provider: UserCollectionStateProvider::class,
         ),
         new Post(security: "is_granted('ROLE_ADMIN')"),
+        new Post(
+            uriTemplate: '/users/{id}/illustration',
+            controller: SetUserIllustrationAction::class,
+            openapi: new Operation(
+                summary: 'Set the illustration image (profile photo) for a User',
+                requestBody: new RequestBody(
+                    content: new ArrayObject([
+                        'multipart/form-data' => [
+                            'schema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'uploadFile' => ['type' => 'string', 'format' => 'binary'],
+                                ],
+                            ],
+                        ],
+                    ]),
+                ),
+            ),
+            security: "is_granted('EDIT', object)",
+            deserialize: false,
+        ),
+        new Delete(
+            uriTemplate: '/users/{id}/illustration',
+            controller: RemoveUserIllustrationAction::class,
+            security: "is_granted('EDIT', object)",
+            deserialize: false,
+            output: false,
+        ),
         new GetCollection(
             uriTemplate: '/users/{id}/skills',
             controller: UserSkillsController::class,
