@@ -29977,7 +29977,7 @@ msgid "Event"
 msgstr "Evenement"
 
 msgid "Go to session"
-msgstr "Ga naar sessie"
+msgstr "Ga naar de sessie"
 
 msgid "Add your first link to this course"
 msgstr "Voeg uw eerste link toe aan deze cursus"
