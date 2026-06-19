@@ -65,6 +65,9 @@ class AccessUserUrlFixtures extends Fixture
 
         $manager->flush();
 
+        $admin->addAuthSourceByAuthentication(UserAuthSource::PLATFORM, $accessUrl);
+        $manager->flush();
+
         $this->addReference(AccessUserFixtures::ACCESS_URL_REFERENCE, $accessUrl);
 
         $this->settingsManager->installSchemas($accessUrl);

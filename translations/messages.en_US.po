@@ -33886,3 +33886,24 @@ msgstr "Welcome to Chamilo"
 
 msgid "<p><img src=\"/img/document/images/mr_chamilo/svg/collaborative.svg\" width=\"320\" height=\"340\" /></p> If this is your first time using Chamilo, make sure you check the side menu to find your way through its many features. If you need help, you will find <a href=\"https://docs.chamilo.org\">our official docs</a> can help for standard documentation, while our <a href=\"https://github.com/chamilo/chamilo-lms/discussions\">online forum</a> can help share ideas and find answers from other Chamilo users."
 msgstr "<p><img src=\"/img/document/images/mr_chamilo/svg/collaborative.svg\" width=\"320\" height=\"340\" /></p> If this is your first time using Chamilo, make sure you check the side menu to find your way through its many features. If you need help, you will find <a href=\"https://docs.chamilo.org\">our official docs</a> can help for standard documentation, while our <a href=\"https://github.com/chamilo/chamilo-lms/discussions\">online forum</a> can help share ideas and find answers from other Chamilo users."
+
+msgid "Past session"
+msgstr "Past session"
+
+msgid "Upcoming session"
+msgstr "Upcoming session"
+
+msgid "Your session"
+msgstr "Your session"
+
+msgid "Starts on"
+msgstr "Starts on"
+
+msgid "Ends on"
+msgstr "Ends on"
+
+msgid "Could not load session markers."
+msgstr "Could not load session markers."
+
+msgid "You are not allowed to view this course's session plan."
+msgstr "You are not allowed to view this course's session plan."

@@ -73,7 +73,7 @@
     "Add event": "Nieuw agenda-item",
     "Add": "Toevoegen",
     "Add skill to search profile": "Vaardigheid toevoegen aan zoekprofiel",
-    "Go to session": "Ga naar sessie",
+    "Go to session": "Ga naar de sessie",
     "Course introduction": "Cursusintroductie",
     "Tools": "Functies",
     "Loading": "Laden",
@@ -1887,4 +1887,11 @@
     "Learner": "Cursist",
     "Human Resources Manager": "Human Resources-manager",
     "Superior (n+1)": "Cursistenbegeleider (n+1)",
+    "Past session": "Voorbije sessie",
+    "Upcoming session": "Geplande sessie",
+    "Your session": "Uw sessie",
+    "Starts on": "Start op",
+    "Ends on": "Eindigt op",
+    "Could not load session markers.": "Kon de sessiemarkeringen niet laden.",
+    "You are not allowed to view this course's session plan.": "U bent niet bevoegd om het sessieplan van deze cursus te bekijken."
 }

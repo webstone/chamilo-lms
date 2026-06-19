@@ -18,10 +18,10 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use ApiPlatform\OpenApi\Model\Parameter;
 use ApiPlatform\OpenApi\Model\RequestBody;
 use ArrayObject;
-use Chamilo\CoreBundle\State\CourseStateProcessor;
-use ApiPlatform\OpenApi\Model\Parameter;
+use Chamilo\CoreBundle\Controller\Api\GetCourseSessionEventsAction;
 use Chamilo\CoreBundle\Controller\Api\GetCourseStatsAction;
 use Chamilo\CoreBundle\Controller\Api\RemoveCourseIllustrationAction;
 use Chamilo\CoreBundle\Controller\Api\SetCourseIllustrationAction;
@@ -29,6 +29,7 @@ use Chamilo\CoreBundle\Entity\Listener\CourseListener;
 use Chamilo\CoreBundle\Entity\Listener\ResourceListener;
 use Chamilo\CoreBundle\Filter\ExtraFieldFilter;
 use Chamilo\CoreBundle\Repository\Node\CourseRepository;
+use Chamilo\CoreBundle\State\CourseStateProcessor;
 use Chamilo\CoreBundle\State\PublicCatalogueCourseStateProvider;
 use Chamilo\CoreBundle\State\StickyCourseStateProvider;
 use Chamilo\CourseBundle\Entity\CGroup;
@@ -119,6 +120,16 @@ use const SORT_NATURAL;
             security: "is_granted('ROLE_ADMIN')",
             deserialize: false,
             output: false,
+        ),
+        new Get(
+            uriTemplate: '/courses/{id}/session_events',
+            controller: GetCourseSessionEventsAction::class,
+            openapi: new OpenApiOperation(
+                summary: 'List the course\'s sessions as FullCalendar-compatible event objects',
+            ),
+            security: "is_granted('VIEW', object) or is_granted('ROLE_ADMIN')",
+            read: true,
+            name: 'get_course_session_events',
         ),
         new GetCollection(
             paginationClientEnabled: true,
@@ -1372,6 +1383,7 @@ class Course extends AbstractResource implements ResourceInterface, ResourceWith
         if (empty($this->code)) {
             $this->setCode($name);
         }
+
         return $this;
     }
 }

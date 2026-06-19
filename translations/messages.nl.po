@@ -29977,7 +29977,7 @@ msgid "Event"
 msgstr "Evenement"
 
 msgid "Go to session"
-msgstr "Ga naar sessie"
+msgstr "Ga naar de sessie"
 
 msgid "Add your first link to this course"
 msgstr "Voeg uw eerste link toe aan deze cursus"
@@ -34016,3 +34016,30 @@ msgstr "Geen enkele cursus laat u momenteel toe deze vaardigheid te verwerven."
 
 msgid "This skill can be obtained through:"
 msgstr "Deze vaardigheid kan verworven worden via:"
+
+msgid "EntraID ID"
+msgstr "EntraID-ID"
+
+msgid "EntraID UID"
+msgstr "EntraID-UID"
+
+msgid "Past session"
+msgstr "Voorbije sessie"
+
+msgid "Upcoming session"
+msgstr "Geplande sessie"
+
+msgid "Your session"
+msgstr "Uw sessie"
+
+msgid "Starts on"
+msgstr "Start op"
+
+msgid "Ends on"
+msgstr "Eindigt op"
+
+msgid "Could not load session markers."
+msgstr "Kon de sessiemarkeringen niet laden."
+
+msgid "You are not allowed to view this course's session plan."
+msgstr "U bent niet bevoegd om het sessieplan van deze cursus te bekijken."

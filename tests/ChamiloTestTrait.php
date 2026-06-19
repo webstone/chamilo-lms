@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Chamilo\Tests;
 
 use Chamilo\CoreBundle\Entity\AccessUrl;
@@ -8,12 +10,14 @@ use Chamilo\CoreBundle\Entity\Session;
 use Chamilo\CoreBundle\Entity\User;
 use Chamilo\CoreBundle\Entity\UserAuthSource;
 use Chamilo\CoreBundle\Entity\Usergroup;
+use Chamilo\CoreBundle\Helpers\ContainerHelper;
 use Chamilo\CoreBundle\Repository\Node\AccessUrlRepository;
 use Chamilo\CoreBundle\Repository\Node\CourseRepository;
 use Chamilo\CoreBundle\Repository\Node\UserRepository;
 use Chamilo\CoreBundle\Repository\SessionRepository;
-use Chamilo\CoreBundle\Helpers\ContainerHelper;
 use Chamilo\CourseBundle\Entity\CGroup;
+use DateTime;
+use DateTimeZone;
 use Doctrine\ORM\EntityManager;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,6 +26,7 @@ use Symfony\Component\HttpFoundation\Session\Session as SymfonySession;
 use Symfony\Component\HttpFoundation\Session\Storage\MockFileSessionStorage;
 use Symfony\Component\Validator\ConstraintViolationList;
 
+use const UPLOAD_ERR_OK;
 
 trait ChamiloTestTrait
 {
@@ -64,7 +69,7 @@ trait ChamiloTestTrait
     }
     public function createCourse(string $title): ?Course
     {
-        /* @var CourseRepository $repo */
+        /** @var CourseRepository $repo */
         $repo = static::getContainer()->get(CourseRepository::class);
         $course = (new Course())
             ->setTitle($title)
@@ -160,7 +165,7 @@ trait ChamiloTestTrait
         return $repo->findOneBy(['url' => $url]);
     }
 
-    public function assertHasNoEntityViolations($entity)
+    public function assertHasNoEntityViolations($entity): void
     {
         /** @var ConstraintViolationList $errors */
         $errors = $this->getViolations($entity);
@@ -221,9 +226,9 @@ trait ChamiloTestTrait
         return $validator->validate($entity);
     }
 
-    public function convertToUTCAndFormat(\DateTime $localTime) : string
+    public function convertToUTCAndFormat(DateTime $localTime): string
     {
-        return $localTime->setTimezone(new \DateTimeZone('UTC'))->format('c');
+        return $localTime->setTimezone(new DateTimeZone('UTC'))->format('c');
     }
 
     public function getEntityManager(): EntityManager
@@ -238,26 +243,25 @@ trait ChamiloTestTrait
      * request stack.
      *
      * @param array $data
-     *   A map where keys can be the following:
-     *   - <request_parameter>: A parameter following symfony http foundation
-     *   Request constructor.
-     *   - 'session': and array with session data to set.
+     *                    A map where keys can be the following:
+     *                    - <request_parameter>: A parameter following symfony http foundation
+     *                    - 'session': and array with session data to set
      *
      * @see \Symfony\Component\HttpFoundation\Request::__construct()
      */
-    public function getMockedRequestStack(array $data = []) : RequestStack
+    public function getMockedRequestStack(array $data = []): RequestStack
     {
         $request_keys = ['query', 'request', 'attributes', 'cookies', 'files', 'server', 'content'];
         $request_parameters = [];
         foreach ($request_keys as $request_key) {
-            $request_parameter_default = ($request_key == 'content') ? null : [];
+            $request_parameter_default = ('content' == $request_key) ? null : [];
             $request_parameter = !empty($data[$request_key]) ? $data[$request_key] : $request_parameter_default;
             $request_parameters[] = $request_parameter;
         }
         $request = new Request();
-        call_user_func_array(array($request, 'initialize'), $request_parameters);
+        \call_user_func_array([$request, 'initialize'], $request_parameters);
         if (!empty($data['session'])) {
-            $session = new SymfonySession(new MockFileSessionStorage);
+            $session = new SymfonySession(new MockFileSessionStorage());
             foreach ($data['session'] as $session_key => $session_value) {
                 $session->set($session_key, $session_value);
             }
@@ -268,7 +272,7 @@ trait ChamiloTestTrait
             ->method('getCurrentRequest')
             ->willReturn($request)
         ;
+
         return $request_stack;
     }
-
 }

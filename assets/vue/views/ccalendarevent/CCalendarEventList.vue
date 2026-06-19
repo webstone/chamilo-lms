@@ -120,11 +120,26 @@
         />
       </template>
     </Dialog>
+
+    <!-- Course-session marker popover (virtual events from /api/courses/{id}/session_events) -->
+    <SessionEventPopover
+      v-if="popoverPayload"
+      v-model="popoverOpen"
+      :title="popoverPayload.title"
+      :session-title="popoverPayload.sessionTitle"
+      :course-id="popoverPayload.courseId"
+      :session-id="popoverPayload.sessionId"
+      :session-start="popoverPayload.sessionStart"
+      :session-end="popoverPayload.sessionEnd"
+      :is-past="popoverPayload.isPast"
+      :is-viewer-enrolled="popoverPayload.isViewerEnrolled"
+      :is-admin-viewer="isAdminViewer"
+    />
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from "vue"
+import { computed, onMounted, reactive, ref, watch } from "vue"
 import { useStore } from "vuex"
 import { useI18n } from "vue-i18n"
 import { useConfirmation } from "../../composables/useConfirmation"
@@ -149,9 +164,11 @@ import { storeToRefs } from "pinia"
 import CalendarSectionHeader from "../../components/ccalendarevent/CalendarSectionHeader.vue"
 import { useCalendarActionButtons } from "../../composables/calendar/calendarActionButtons"
 import { useCalendarEvent } from "../../composables/calendar/calendarEvent"
+import { useCourseSessionEvents } from "../../composables/calendar/useCourseSessionEvents"
 import resourceLinkService from "../../services/resourceLinkService"
 import { useSecurityStore } from "../../store/securityStore"
 import { useCourseSettings } from "../../store/courseSettingStore"
+import SessionEventPopover from "../../components/ccalendarevent/SessionEventPopover.vue"
 
 const store = useStore()
 const securityStore = useSecurityStore()
@@ -381,6 +398,36 @@ watch(
 
 let currentEvent = null
 
+// --- Course-session virtual event source (read-only markers in the Agenda) ---
+const courseIdForSessionEvents = computed(() => course.value?.id ?? null)
+const { events: sessionEvents, refetch: refetchSessionEvents } = useCourseSessionEvents(courseIdForSessionEvents)
+const isAdminViewer = computed(() => securityStore.isAdmin)
+
+const popoverOpen = ref(false)
+const popoverPayload = ref(null)
+
+function openSessionPopover(payload) {
+  popoverPayload.value = payload
+  popoverOpen.value = true
+}
+
+onMounted(() => {
+  refetchSessionEvents()
+})
+
+watch(
+  () => course.value?.id,
+  () => {
+    refetchSessionEvents()
+  },
+)
+
+// When the session-events payload arrives or changes, force FullCalendar to
+// re-query its event sources so the virtual markers show up immediately.
+watch(sessionEvents, () => {
+  cal.value?.getApi?.()?.refetchEvents?.()
+})
+
 const sessionState = reactive({
   sessionAsEvent: {
     id: "",
@@ -493,6 +540,24 @@ const calendarOptions = ref({
 
   eventClick(eventClickInfo) {
     eventClickInfo.jsEvent.preventDefault()
+
+    // Session-derived virtual events (from /api/courses/{id}/session_events)
+    // are read-only markers; open the dedicated popover and bail out.
+    if (String(eventClickInfo.event.id || "").startsWith("session-")) {
+      const ep = eventClickInfo.event.extendedProps || {}
+      openSessionPopover({
+        title: eventClickInfo.event.title,
+        sessionTitle: ep.sessionTitle,
+        courseId: ep.courseId,
+        sessionId: ep.sessionId,
+        sessionStart: ep.sessionStart,
+        sessionEnd: ep.sessionEnd,
+        isPast: Boolean(ep.isPast),
+        isViewerEnrolled: Boolean(ep.isViewerEnrolled),
+      })
+      return
+    }
+
     currentEvent = eventClickInfo.event
 
     const event = eventClickInfo.event.toPlainObject()
@@ -567,30 +632,85 @@ const calendarOptions = ref({
     dialog.value = true
   },
 
-  events(info, successCallback) {
-    const commonParams = {}
+  eventSources: [
+    {
+      id: "calendar-events",
+      events(info, successCallback) {
+        const commonParams = {}
 
-    if (course.value) {
-      commonParams.cid = course.value.id
+        if (course.value) {
+          commonParams.cid = course.value.id
+        }
+
+        if (session.value) {
+          commonParams.sid = session.value.id
+        }
+
+        if (route.query?.type === "global") {
+          commonParams.type = "global"
+        }
+
+        const gidFromRoute = Number(route.query.gid ?? 0)
+        const gidFromStore = Number(group.value?.id ?? 0)
+        const effectiveGid = gidFromStore > 0 ? gidFromStore : gidFromRoute
+
+        if (effectiveGid > 0) {
+          commonParams.gid = effectiveGid
+        }
+
+        getCalendarEvents(info.start, info.end, commonParams).then((events) => successCallback(events))
+      },
+    },
+    {
+      id: "session-virtual-events",
+      display: "block", // Force block-style rendering so isPast/upcoming background and white text actually render in dayGridMonth view. Without this, FullCalendar uses dot-style for timed events and ignores our inline backgroundColor/color.
+      events(_info, successCallback) {
+        successCallback(sessionEvents.value || [])
+      },
+    },
+  ],
+
+  eventDidMount(info) {
+    // Style hook for session-derived virtual events only. Their ids are
+    // assigned the form `session-<id>` by useCourseSessionEvents — keep the
+    // convention in sync if it ever changes.
+    if (!String(info.event.id || "").startsWith("session-")) return
+
+    const ep = info.event.extendedProps || {}
+    info.el.classList.add("chamilo-session-event")
+
+    if (ep.isPast) {
+      info.el.classList.add("chamilo-session-event--past")
+      info.el.style.opacity = "0.5"
+      info.el.style.backgroundColor = "#9ca3af"
+      info.el.style.borderColor = "#9ca3af"
+    } else {
+      info.el.style.opacity = "1"
+      info.el.style.backgroundColor = "rgb(var(--color-primary-base))"
+      info.el.style.borderColor = "rgb(var(--color-primary-base))"
+      info.el.style.color = "rgb(var(--color-primary-button-alternative-text, 255 255 255))"
     }
 
-    if (session.value) {
-      commonParams.sid = session.value.id
+    // Dot indicator (FullCalendar uses --fc-event-bg-color for the dot's
+    // border-color in dayGridMonth view). White on the brand bg, matching
+    // the event text. Past events keep the muted-grey dot.
+    info.el.style.setProperty(
+      "--fc-event-bg-color",
+      ep.isPast ? "#9ca3af" : "rgb(var(--color-primary-button-alternative-text, 255 255 255))",
+    )
+
+    if (ep.isViewerEnrolled) {
+      info.el.classList.add("chamilo-session-event--mine")
+      info.el.style.borderLeft = "4px solid #f59e0b"
+      info.el.style.fontWeight = "600"
     }
 
-    if (route.query?.type === "global") {
-      commonParams.type = "global"
-    }
-
-    const gidFromRoute = Number(route.query.gid ?? 0)
-    const gidFromStore = Number(group.value?.id ?? 0)
-    const effectiveGid = gidFromStore > 0 ? gidFromStore : gidFromRoute
-
-    if (effectiveGid > 0) {
-      commonParams.gid = effectiveGid
-    }
-
-    getCalendarEvents(info.start, info.end, commonParams).then((events) => successCallback(events))
+    info.el.setAttribute(
+      "aria-label",
+      `${info.event.title}, ${ep.isPast ? "past session" : "upcoming session"}` +
+        (ep.isViewerEnrolled ? ", you are enrolled" : ""),
+    )
+    info.el.title = ep.sessionTitle || info.event.title
   },
 
   eventDidMount(info) {

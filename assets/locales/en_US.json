@@ -1883,5 +1883,12 @@
     "HR Manager": "HR Manager",
     "Question Bank Manager": "Question Bank Manager",
     "Session Manager": "Session Manager",
-    "Student Boss": "Student Boss"
+    "Student Boss": "Student Boss",
+    "Past session": "Past session",
+    "Upcoming session": "Upcoming session",
+    "Your session": "Your session",
+    "Starts on": "Starts on",
+    "Ends on": "Ends on",
+    "Could not load session markers.": "Could not load session markers.",
+    "You are not allowed to view this course's session plan.": "You are not allowed to view this course's session plan."
 }
