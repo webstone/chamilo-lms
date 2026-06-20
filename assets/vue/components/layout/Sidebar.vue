@@ -87,7 +87,6 @@ import { useI18n } from "vue-i18n"
 import { usePlatformConfig } from "../../store/platformConfig"
 import { useSecurityStore } from "../../store/securityStore"
 import { useSidebarMenu } from "../../composables/sidebarMenu"
-import { usePlatformConfig } from "../../store/platformConfig"
 import PageList from "../page/PageList.vue"
 import { useEnrolledStore } from "../../store/enrolledStore"
 import BaseIcon from "../basecomponents/BaseIcon.vue"
@@ -98,7 +97,6 @@ const { t } = useI18n()
 const platformConfigStore = usePlatformConfig()
 const securityStore = useSecurityStore()
 const enrolledStore = useEnrolledStore()
-const platformConfigStore = usePlatformConfig()
 
 const { menuItemsBeforeMyCourse, menuItemMyCourse, menuItemsAfterMyCourse, hasOnlyOneItem, initialize } =
   useSidebarMenu()
