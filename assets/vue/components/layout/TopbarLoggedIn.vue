@@ -366,29 +366,6 @@ const pendingSurveysUrl = computed(() => {
   return "/main/survey/pending.php"
 })
 
-const isAnonymous = computed(() => {
-  const u = props.currentUser || securityStore.user || {}
-  const roles = Array.isArray(u.roles) ? u.roles : []
-  if (roles.includes("ROLE_ANONYMOUS")) return true
-  if (u.is_anonymous === true || u.isAnonymous === true) return true
-  const st = (u.status || "").toString().toUpperCase()
-  return st === "ANONYMOUS"
-})
-
-const messagingEnabled = computed(() => {
-  return platformConfigStore.getSetting("message.allow_message_tool") === "true" && !isAnonymous.value
-})
-
-const ticketUrl = computed(() => {
-  const searchParms = new URLSearchParams()
-  searchParms.append("project_id", "1")
-  searchParms.append("cid", cidReqStore.course?.id ?? 0)
-  searchParms.append("sid", cidReqStore.session?.id ?? 0)
-  searchParms.append("gid", cidReqStore.group?.id ?? 0)
-
-  return "/main/ticket/tickets.php?" + searchParms.toString()
-})
-
 const websiteUrl = computed(() => platformConfigStore.getSetting("website_url") || null)
 
 function isSettingTrue(keys, defaultValue = false) {
@@ -453,79 +430,7 @@ async function fetchHasCustomCertificate() {
   }
 }
 
-const userSubmenuItems = computed(() => {
-  const items = [
-    {
-      label: props.currentUser?.fullName || t("My profile"),
-      items: [
-        {
-          label: t("My profile"),
-          url: router.resolve({ name: "AccountHome" }).href,
-        },
-      ],
-    },
-  ]
-
-  if (showPendingSurveys.value) {
-    items[0].items.push({
-      label: t("Pending surveys"),
-      url: pendingSurveysUrl.value,
-    })
-  }
-
-  // My certificates (gradebook)
-  if (isTopbarEnabled("topbar_my_certificates")) {
-    items[0].items.push({
-      label: t("My certificates"),
-      url: "/main/gradebook/my_certificates.php",
-    })
-  }
-
-  // My custom certificate (PDF)
-  if (isTopbarEnabled("topbar_my_custom_certificate") && generalCertificateAllowed.value) {
-    if (hasCustomCertificate.value === true) {
-      items[0].items.push({
-        label: t("My custom certificate"),
-        url: "/main/social/my_skills_report.php?a=generate_custom_skill",
-      })
-    }
-  }
-
-  // My skills
-  if (isTopbarEnabled("topbar_skills") && skillsToolAllowed.value) {
-    items[0].items.push({
-      label: t("My skills"),
-      url: "/main/social/my_skills_report.php",
-    })
-  }
-
-  items[0].items.push({ separator: true }, { label: t("Sign out"), url: "/logout", icon: "mdi mdi-logout-variant" })
-  return items
-})
-
-function toggleUserMenu(event) {
-  // Always open immediately (PrimeVue needs the click event to position the popup).
-  elUserSubmenu.value?.toggle(event)
-
-  // Fetch in background only when needed.
-  const shouldCheck =
-    !isAnonymous.value &&
-    generalCertificateAllowed.value &&
-    isTopbarEnabled("topbar_my_custom_certificate") &&
-    hasCustomCertificate.value === null
-
-  if (shouldCheck) {
-    fetchHasCustomCertificate()
-  }
-}
-
-const btnInboxBadge = computed(() => {
-  if (!messagingEnabled.value) return null
-  const unreadCount = messageRelUserStore.countUnread
-  return unreadCount > 20 ? "20+" : unreadCount > 0 ? unreadCount.toString() : null
-})
-
-if (messagingEnabled.value) {
-  messageRelUserStore.findUnreadCount().catch((e) => notification.showErrorNotification(e))
-}
+// Note: userSubmenuItems, toggleUserMenu and btnInboxBadge are returned by
+// useTopbarLoggedIn() above (since v2.0.2); the inline RC.2-era versions were
+// removed as part of the v2.0.2 upgrade.
 </script>

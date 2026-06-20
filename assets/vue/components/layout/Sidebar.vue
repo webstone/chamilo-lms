@@ -93,7 +93,6 @@ import ToggleButton from "primevue/togglebutton"
 import { useI18n } from "vue-i18n"
 import { useSecurityStore } from "../../store/securityStore"
 import { useSidebarMenu } from "../../composables/sidebarMenu"
-import { usePlatformConfig } from "../../store/platformConfig"
 import PageList from "../page/PageList.vue"
 import { useEnrolledStore } from "../../store/enrolledStore"
 import BaseIcon from "../basecomponents/BaseIcon.vue"
@@ -103,7 +102,6 @@ import CategoryLinks from "../page/CategoryLinks.vue"
 const { t } = useI18n()
 const securityStore = useSecurityStore()
 const enrolledStore = useEnrolledStore()
-const platformConfigStore = usePlatformConfig()
 
 const { menuItemsBeforeMyCourse, menuItemMyCourse, menuItemsAfterMyCourse, hasOnlyOneItem, initialize } =
   useSidebarMenu()
