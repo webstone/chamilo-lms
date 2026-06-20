@@ -113,6 +113,7 @@
 </template>
 
 <script setup>
+import { computed, ref } from "vue"
 import Avatar from "primevue/avatar"
 import Menu from "primevue/menu"
 import PlatformLogo from "./PlatformLogo.vue"
