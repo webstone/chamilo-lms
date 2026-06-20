@@ -124,6 +124,9 @@ import BaseAppLink from "../basecomponents/BaseAppLink.vue"
 import { useTopbarLoggedIn } from "../../composables/useTopbarLoggedIn"
 import { useTopbarTour } from "../../composables/useTopbarTour"
 import { useI18n } from "vue-i18n"
+import { useRouter } from "vue-router"
+import { usePlatformConfig } from "../../store/platformConfig"
+import { useSecurityStore } from "../../store/securityStore"
 
 const props = defineProps({
   currentUser: {
@@ -133,6 +136,9 @@ const props = defineProps({
 })
 
 const { t } = useI18n()
+const router = useRouter()
+const platformConfigStore = usePlatformConfig()
+const securityStore = useSecurityStore()
 
 const {
   loginUrl,
