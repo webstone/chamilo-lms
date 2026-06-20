@@ -24,7 +24,6 @@ use ApiPlatform\OpenApi\Model\Parameter;
 use ApiPlatform\OpenApi\Model\RequestBody;
 use ArrayObject;
 use Chamilo\CoreBundle\Controller\Api\CreateUserOnAccessUrlAction;
-use Chamilo\CoreBundle\Controller\Api\GetStatsAction;
 use Chamilo\CoreBundle\Controller\Api\RemoveUserIllustrationAction;
 use Chamilo\CoreBundle\Controller\Api\SetUserIllustrationAction;
 use Chamilo\CoreBundle\Controller\Api\UserSkillsController;
