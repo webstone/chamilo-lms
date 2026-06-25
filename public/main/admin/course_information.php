@@ -17,11 +17,18 @@ $this_section = SECTION_PLATFORM_ADMIN;
 
 api_protect_admin_script();
 
-if (!isset($_GET['id'])) {
-    api_not_allowed(true);
+// Accept either ?id=<numeric> (preferred) or ?code=<course-code>. The Vue
+// admin course list (CourseList.vue) currently links here with ?code=.
+$course = null;
+if (isset($_GET['id'])) {
+    $course = api_get_course_entity($_GET['id']);
+} elseif (isset($_GET['code']) && '' !== $_GET['code']) {
+    $courseInfo = api_get_course_info($_GET['code']);
+    if (!empty($courseInfo['real_id'])) {
+        $course = api_get_course_entity($courseInfo['real_id']);
+    }
 }
 
-$course = api_get_course_entity($_GET['id']);
 if (null === $course) {
     api_not_allowed(true);
 }
