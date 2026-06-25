@@ -2,6 +2,23 @@ import fetch from "../utils/fetch"
 import makeService from "./api"
 import baseService from "./baseService"
 import prettyBytes from "pretty-bytes"
+import api from "../config/api"
+import { useCidReqStore } from "../store/cidReq"
+
+// Fallback URL parser (mirrors master's utils/courseContext.js, inlined for
+// stable since the helper is not backported here).
+const COURSE_HOME_PATH = /^\/course\/(\d+)\/home/
+
+function getCourseContext() {
+  const search = new URLSearchParams(window.location.search)
+  const pathMatch = window.location.pathname.match(COURSE_HOME_PATH)
+  const cid = pathMatch ? pathMatch[1] : search.get("cid")
+  return {
+    cid: parseInt(cid ?? 0) || 0,
+    sid: parseInt(search.get("sid") ?? 0) || 0,
+    gid: parseInt(search.get("gid") ?? 0) || 0,
+  }
+}
 
 const oldService = makeService("documents")
 
@@ -211,11 +228,56 @@ export default {
 
   /**
    * Override createWithFormData only for documents to avoid breaking other modules.
-   * This keeps api.js untouched and prevents sending searchFieldValues as "[object Object]".
+   * Two reasons:
+   * 1. Flattens searchFieldValues so FormData does not serialize them as "[object Object]".
+   * 2. Forces the current course/session/group context (cid/sid/gid) onto the POST URL.
+   *    The shared axios interceptor in config/api.js reads getRawCourseContext() from
+   *    window.location.search, which is empty when the SPA navigates without preserving
+   *    ?cid=. Without cid in the request, CidReqListener wipes the session course;
+   *    CreateDocumentFileAction then builds a resource_link with no cid, and the new
+   *    document hangs orphaned (not visible in the course documents list). Reading the
+   *    Pinia cidReq store directly here is the canonical source maintained by the
+   *    router guards and survives URL changes.
    */
-  createWithFormData(payload) {
+  async createWithFormData(payload) {
     const prepared = flattenSearchFieldValues(payload)
-    return oldService.createWithFormData(prepared)
+    const formData = buildFormData(prepared)
+
+    // Course context: Pinia store is authoritative; getCourseContext() (URL-based)
+    // is the fallback for early init before the store is hydrated.
+    let cid = 0
+    let sid = 0
+    let gid = 0
+    try {
+      const store = useCidReqStore()
+      cid = Number(store.course?.id ?? 0) || 0
+      sid = Number(store.session?.id ?? 0) || 0
+      gid = Number(store.group?.id ?? 0) || 0
+    } catch {
+      // Pinia not active (test or pre-mount) — fall through to URL parse.
+    }
+    if (!cid) {
+      const fromUrl = getCourseContext()
+      cid = fromUrl.cid
+      sid = fromUrl.sid
+      gid = fromUrl.gid
+    }
+
+    const params = {}
+    if (cid > 0) params.cid = cid
+    if (sid > 0) params.sid = sid
+    if (gid > 0) params.gid = gid
+
+    // Use axios directly (config/api), then wrap the axios response in a minimal
+    // Response-like shim. The legacy CRUD store expects .ok / .status / .json().
+    const response = await api.post("/api/documents", formData, { params })
+    return {
+      ok: response.status >= 200 && response.status < 300,
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+      json: async () => response.data,
+    }
   },
 
   /**
