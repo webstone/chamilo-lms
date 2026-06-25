@@ -28,6 +28,11 @@ parameters:
                     resource_owner_student_status_field: null
                     resource_owner_anon_status_field: null
                     resource_owner_urls_field: null
+                    # Truthy boolean fields → add ROLE_ADMIN / ROLE_GLOBAL_ADMIN
+                    # on top of the role derived from status. Add-only: never
+                    # strips an existing role.
+                    resource_owner_admin_field: null
+                    resource_owner_global_admin_field: null
 
                 facebook:
                     enabled: false
