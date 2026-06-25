@@ -36,7 +36,8 @@ h1, h2, h3, h4, h5, h6,
   @apply bg-tertiary;
   border-bottom-color: rgb(var(--color-tertiary-gradient));
   padding-top: var(--topbar-padding);
-  padding-bottom: var(--topbar-padding);
+  // -1px absorbs the border-b so total rendered height matches --topbar-height (50px).
+  padding-bottom: calc(var(--topbar-padding) - 1px);
 
   .p-menubar {
     @apply text-white;
