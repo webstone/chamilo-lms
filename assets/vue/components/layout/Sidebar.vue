@@ -92,6 +92,7 @@ import { onMounted, ref, watch, computed } from "vue"
 import ToggleButton from "primevue/togglebutton"
 import { useI18n } from "vue-i18n"
 import { useSecurityStore } from "../../store/securityStore"
+import { usePlatformConfig } from "../../store/platformConfig"
 import { useSidebarMenu } from "../../composables/sidebarMenu"
 import PageList from "../page/PageList.vue"
 import { useEnrolledStore } from "../../store/enrolledStore"
@@ -101,6 +102,7 @@ import CategoryLinks from "../page/CategoryLinks.vue"
 
 const { t } = useI18n()
 const securityStore = useSecurityStore()
+const platformConfigStore = usePlatformConfig()
 const enrolledStore = useEnrolledStore()
 
 const { menuItemsBeforeMyCourse, menuItemMyCourse, menuItemsAfterMyCourse, hasOnlyOneItem, initialize } =
@@ -117,6 +119,7 @@ if (!isMobile() && storedSidebarState === null) {
 }
 const expandingDueToPanelClick = ref(false)
 
+const institutionAddress = computed(() => platformConfigStore.getSetting("institution_address") || null)
 const websiteUrl = computed(() => platformConfigStore.getSetting("website_url") || null)
 
 const hideLogoutButton = computed(() => {

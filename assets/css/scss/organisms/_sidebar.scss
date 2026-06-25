@@ -22,7 +22,7 @@
   }
 
   &__logout-link {
-    @apply block font-semibold whitespace-nowrap mt-5 mx-6 mb-3.5 px-4 py-2;
+    @apply flex items-center font-semibold whitespace-nowrap mt-5 mx-6 mb-3.5 px-4 py-2;
 
     .base-icon {
       @apply leading-normal text-body-2;
@@ -193,6 +193,8 @@
 
 .app-sidebar__topbar-button {
   @apply text-center sm:hidden;
+  // Size override for the teleported button lives in _topbar.scss next to the
+  // sibling .item-button rules, where it can win the specificity battle.
 }
 
 #app {

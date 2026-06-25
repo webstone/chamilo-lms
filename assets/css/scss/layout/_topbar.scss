@@ -118,15 +118,10 @@
     @apply flex grow justify-end items-center gap-6;
 
     .item-button {
-      @apply w-8 h-8 relative text-center;
+      @apply w-8 h-8 relative inline-flex items-center justify-center;
 
-      & > .base-icon > .mdi {
-        @apply text-2xl leading-6 w-6 h-6;
-      }
-
-      > .base-icon {
-        @apply w-8 h-8 items-center justify-center text-gray-50
-          hover:text-gray-90;
+      .base-icon {
+        @apply text-gray-50 hover:text-gray-90;
       }
 
       .base-icon__badge--top-left {
@@ -152,7 +147,9 @@
     @apply ml-6 mr-4 flex items-center gap-6;
 
     .user-avatar {
-      @apply rounded-full w-8 h-8 text-white bg-primary leading-6 text-body-2 font-semibold;
+      @apply rounded-full w-8 h-8 text-white bg-primary leading-6 text-body-2 font-semibold
+        cursor-pointer transition
+        hover:ring-2 hover:ring-primary hover:ring-offset-2;
 
       img {
         @apply rounded-full w-8 h-8;
@@ -160,7 +157,7 @@
     }
 
     .item-button {
-      @apply w-8 h-8 relative;
+      @apply w-8 h-8 relative inline-flex items-center justify-center;
 
       .mdi,
       &__icon {
@@ -172,6 +169,26 @@
         }
       }
     }
+
+    // Sidebar-collapse toggle is Teleported here from Sidebar.vue. Keep it
+    // mobile-only; double-class selector wins the specificity battle against
+    // the .item-button rule above (which would otherwise force inline-flex
+    // visibility on desktop).
+    .app-sidebar__topbar-button.item-button {
+      @apply sm:hidden;
+
+      // Bigger than the standard .item-button .mdi (text-2xl / w-6 h-6) so
+      // the close/hamburger glyph visually fills the 32×32 button on mobile,
+      // matching the adjacent avatar instead of looking undersized.
+      .mdi {
+        @apply text-3xl leading-none w-auto h-auto;
+
+        &::before {
+          @apply text-3xl leading-none;
+        }
+      }
+    }
+
   }
 
   &__user-submenu {
