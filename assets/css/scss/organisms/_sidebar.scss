@@ -193,6 +193,8 @@
 
 .app-sidebar__topbar-button {
   @apply text-center sm:hidden;
+  // Size override for the teleported button lives in _topbar.scss next to the
+  // sibling .item-button rules, where it can win the specificity battle.
 }
 
 #app {
