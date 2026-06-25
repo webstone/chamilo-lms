@@ -180,6 +180,26 @@ class GenericAuthenticator extends AbstractAuthenticator
             ->setRoleFromStatus($status)
         ;
 
+        // Reconcile status-derived roles: drop any role that doesn't match
+        // the current status. Idempotent — runs on every login, so stale
+        // roles left by an earlier add-only mapping (e.g. ROLE_TEACHER
+        // surviving a teacher→DRH transition that pre-dated set-semantics)
+        // get cleaned up on the next OAuth login.
+        $expectedStatusRole = User::getRoleFromStatus($status);
+        $statusDerivedRoles = [
+            'ROLE_TEACHER',
+            'ROLE_STUDENT',
+            'ROLE_HR',
+            'ROLE_SESSION_MANAGER',
+            'ROLE_STUDENT_BOSS',
+            'ROLE_INVITEE',
+        ];
+        foreach ($statusDerivedRoles as $role) {
+            if ($role !== $expectedStatusRole && \in_array($role, $user->getRoles(), true)) {
+                $user->removeRole($role);
+            }
+        }
+
         // setLocale/setTimezone are non-nullable (string, not ?string); inner guard prevents TypeError if provider sends null.
         if ($localeField = $providerParams['resource_owner_locale_field'] ?? null) {
             $locale = $this->getValueByKey($resourceOwnerData, $localeField, $user->getLocale());
@@ -205,6 +225,34 @@ class GenericAuthenticator extends AbstractAuthenticator
             $user->setPhone(
                 $this->getValueByKey($resourceOwnerData, $phoneField, $user->getPhone())
             );
+        }
+
+        // Admin / global-admin flags are orthogonal to status (a user can be a
+        // teacher AND a platform admin). Set-semantics: if the provider exposes
+        // the field and it's truthy → add the role; if exposed and falsy →
+        // remove it. If the field is *absent* from the response, the user's
+        // existing role is left alone, so a manually-granted admin role isn't
+        // stripped by a provider that doesn't know about it. array_key_exists()
+        // is required because getValueByKey() can't distinguish "missing key"
+        // from "key === default".
+        if ($adminField = $providerParams['resource_owner_admin_field'] ?? null) {
+            if (\array_key_exists($adminField, $resourceOwnerData)) {
+                if ($resourceOwnerData[$adminField]) {
+                    $user->addRole('ROLE_ADMIN');
+                } else {
+                    $user->removeRole('ROLE_ADMIN');
+                }
+            }
+        }
+
+        if ($globalAdminField = $providerParams['resource_owner_global_admin_field'] ?? null) {
+            if (\array_key_exists($globalAdminField, $resourceOwnerData)) {
+                if ($resourceOwnerData[$globalAdminField]) {
+                    $user->addRole('ROLE_GLOBAL_ADMIN');
+                } else {
+                    $user->removeRole('ROLE_GLOBAL_ADMIN');
+                }
+            }
         }
 
         $this->userRepository->updateUser($user);
