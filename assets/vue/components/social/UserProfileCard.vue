@@ -17,7 +17,7 @@
 
         <div
           v-else-if="avatarState === 'ready'"
-          class="rounded-full border border-gray-25 bg-white p-1 shadow-sm"
+          class="inline-flex rounded-full border border-gray-25 bg-white p-1 shadow-sm"
         >
           <BaseUserAvatar
             :alt="t('Picture')"
