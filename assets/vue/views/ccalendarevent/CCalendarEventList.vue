@@ -688,16 +688,17 @@ const calendarOptions = ref({
       info.el.style.opacity = "1"
       info.el.style.backgroundColor = "rgb(var(--color-primary-base))"
       info.el.style.borderColor = "rgb(var(--color-primary-base))"
-      info.el.style.color = "rgb(var(--color-primary-button-alternative-text, 255 255 255))"
+      // Force white text on the brand-coloured bg. The OWC theme sets
+      // --color-primary-button-alternative-text to 0 0 0 (black) which is
+      // unreadable on olive green; the default Chamilo theme uses 255 255 255.
+      // Hardcoding white guarantees contrast on any active theme.
+      info.el.style.color = "#ffffff"
     }
 
     // Dot indicator (FullCalendar uses --fc-event-bg-color for the dot's
     // border-color in dayGridMonth view). White on the brand bg, matching
     // the event text. Past events keep the muted-grey dot.
-    info.el.style.setProperty(
-      "--fc-event-bg-color",
-      ep.isPast ? "#9ca3af" : "rgb(var(--color-primary-button-alternative-text, 255 255 255))",
-    )
+    info.el.style.setProperty("--fc-event-bg-color", ep.isPast ? "#9ca3af" : "#ffffff")
 
     if (ep.isViewerEnrolled) {
       info.el.classList.add("chamilo-session-event--mine")
@@ -898,3 +899,22 @@ watch(
   },
 )
 </script>
+
+<style>
+/*
+ * Override FullCalendar's hardcoded blue defaults with the Chamilo primary
+ * theme token so events without an explicit color follow the active theme
+ * (e.g. OWC green). Session-event markers set their own background inline
+ * via eventDidMount; this only catches regular CCalendarEvent items and
+ * any element that falls back to --fc-event-bg-color (e.g. the dot in
+ * dayGridMonth dot-style events).
+ */
+.fc {
+  --fc-event-bg-color: rgb(var(--color-primary-base));
+  --fc-event-border-color: rgb(var(--color-primary-base));
+  /* Hardcoded white instead of --color-primary-button-alternative-text:
+   * the OWC theme sets that token to 0 0 0 (black), which is unreadable
+   * on the olive-green primary background. */
+  --fc-event-text-color: #ffffff;
+}
+</style>
