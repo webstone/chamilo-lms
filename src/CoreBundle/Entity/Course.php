@@ -60,6 +60,9 @@ use const SORT_NATURAL;
             security: "is_granted('ROLE_ADMIN')",
             processor: CourseStateProcessor::class,
         ),
+        new Delete(
+            security: "is_granted('ROLE_ADMIN')",
+        ),
         new Post(
             uriTemplate: '/courses/{id}/illustration',
             controller: SetCourseIllustrationAction::class,
