@@ -78,18 +78,13 @@ final class LoginAsAuthorizationChecker
         return $user->isAdmin() || $user->isSuperAdmin();
     }
 
-    /**
-     * Replicates api_is_global_platform_admin(): the user is a platform admin AND is
-     * registered on access URL #1 (the main installation). Falls back to the legacy
-     * helper to honor multi-URL setups.
-     */
     private function isGlobalPlatformAdmin(User $user): bool
     {
         if (!$this->isPlatformAdmin($user)) {
             return false;
         }
 
-        return \api_is_global_platform_admin($user->getId());
+        return $user->isSuperAdmin();
     }
 
     /**
