@@ -111,7 +111,7 @@
                 :key="code"
                 :value="code"
               >
-                {{ label }}
+                {{ t(label) }}
               </option>
             </select>
           </div>
