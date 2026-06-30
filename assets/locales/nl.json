@@ -1241,7 +1241,7 @@
     "Admin Completed Courses": "Admin Voltooide Cursussen",
     "Admin Incomplete Courses": "Admin Onvoltooide Cursussen",
     "Admin Restart Courses": "Admin Herstart Cursussen",
-    "Admin Dashboard": "Admin Dashboard",
+    "Admin Dashboard": "Beheerdersdashboard",
     "New messages": "Nieuwe berichten",
     "Authentication source": "Authenticatiebron",
     "Assign authentication sources to users": "Authenticatiebronnen toewijzen aan gebruikers",
@@ -1639,7 +1639,7 @@
     "Third parties": "Derden",
     "Generate terms": "Voorwaarden genereren",
     "Add variation": "Variatie toevoegen",
-    "Editor demo": "Editor demo",
+    "Editor demo": "Editor-demo",
     "Tool introduction": "Introductietekst",
     "Subscribe users to class": "Schrijf gebruikers in voor klas",
     "Relation type": "Relatietype",
@@ -1866,5 +1866,7 @@
     "Save and insert": "Opslaan en invoegen",
     "Saving is only supported when the provider returns base64 content. If you only received a URL, saving is disabled to avoid downloading in the browser.": "Opslaan wordt alleen ondersteund als de provider base64-inhoud retourneert. Als u alleen een URL hebt ontvangen, is opslaan uitgeschakeld om downloaden in de browser te vermijden.",
     "Video generated successfully, but saving is disabled because the provider returned a URL.": "Video succesvol gegenereerd, maar opslaan is uitgeschakeld omdat de provider een URL retourneerde.",
-    "The file was saved, but its URL could not be resolved.": "Het bestand is opgeslagen, maar de URL kon niet worden opgelost."
+    "The file was saved, but its URL could not be resolved.": "Het bestand is opgeslagen, maar de URL kon niet worden opgelost.",
+    "Attempting to login as %s (id %d)": "Proberen in te loggen als {0} (id {1})",
+    "Login successful. Go to %s": "Met succes ingelogd. Ga naar {0}"
 }

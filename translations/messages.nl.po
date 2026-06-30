@@ -16880,7 +16880,7 @@ msgid "Choose whether you want to enable the BigBlueButton videoconference tool.
 msgstr "Bepaal of je de BigBlueButton videoconferentietool wil inschakelen. Eenmaal ingeschakeld, zal het als een cursustool verschijnen in al je cursuspagina's, en lesgevers zullen een online conferentie kunnen activeren wanneer ze willen. Cursisten zullen enkel kunnen deelnemen aan een actieve conferentie. Heb je geen BigBlueButton server, dan moet je er <a href=\"http://bigbluebutton.org/\">een opzetten</a>, of contacteer een van de <a href=\"http://www.chamilo.org/en/providers\">officiële Chamilo providers</a> voor een offerte. BigBlueButtons is vrij te gebruiken (gratis, zoals in bier, maar ook vrij zoals in vrijheid), maar de installatie vraagt wel heel wat technische vaardigheden die niet iedereen beheerst. Je kunt het zelf installeren, of professionele hulp zoeken om je te helpen bij de installatie. Deze hulp zal echter niet gratis zijn. In de geest van vrije software, kun je vrij beschikken over alle modules nodig om de applicatie te kunnen installeren, maar we adviseren om professionele (de Chamilo officiële providers) ondersteuning te vragen hiervoor, als het te moeilijk is."
 
 msgid "BigBlueButton server host"
-msgstr "BigBlueButton server host"
+msgstr "BigBlueButton-serverhost"
 
 msgid "This is the name of the server where your BigBlueButton server is running. Might be <i>localhost</i>, an IP address (e.g. 192.168.13.54) or a domain name (e.g. my.video.com)."
 msgstr "Dit is de naam van de server waarop je BigBlueButton server draait. Mogelijk is het <em>localhost</em>, een IP-adres (bijv. 192.168.13.54) of een domeinnaam (bijv. mijnvideo.com)."
@@ -20805,7 +20805,7 @@ msgid "Business card"
 msgstr "Visitekaartje"
 
 msgid "Badge details"
-msgstr "Badge details"
+msgstr "Badge-details"
 
 msgid "The user %s has not achieved the skill \"%s\" yet"
 msgstr "De gebruiker %s beheerst deze vaardigheid nog niet \"%s\""
@@ -22260,7 +22260,7 @@ msgid "Cloud file link"
 msgstr "Link naar cloud-bestand"
 
 msgid "Reset %s"
-msgstr "Reset %s"
+msgstr "%s resetten"
 
 msgid "My global certificate"
 msgstr "Mijn wereldwijd certificaat"
@@ -30991,7 +30991,7 @@ msgid "Account locked until"
 msgstr "Account vergrendeld tot"
 
 msgid "Google Calendar URL"
-msgstr "Google Calendar URL"
+msgstr "Google Agenda-URL"
 
 msgid "User chat status"
 msgstr "Gebruikers chatstatus"
@@ -31315,7 +31315,7 @@ msgid "Admin Restart Courses"
 msgstr "Admin Herstart Cursussen"
 
 msgid "Admin Dashboard"
-msgstr "Admin Dashboard"
+msgstr "Beheerdersdashboard"
 
 msgid "Threads"
 msgstr "Threads"
@@ -33223,7 +33223,7 @@ msgid "Add variation"
 msgstr "Variatie toevoegen"
 
 msgid "Editor demo"
-msgstr "Editor demo"
+msgstr "Editor-demo"
 
 msgid "Tool introduction"
 msgstr "Introductietekst"
