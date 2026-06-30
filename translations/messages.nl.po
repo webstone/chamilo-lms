@@ -959,7 +959,7 @@ msgid "Please pick a student"
 msgstr "Selecteer een student"
 
 msgid "Search users"
-msgstr "Zoek cursist"
+msgstr "Zoek gebruikers"
 
 msgid "Please pick a course"
 msgstr "Selecteer een cursus"
@@ -31353,7 +31353,7 @@ msgid "Add users to selected URLs"
 msgstr "Gebruikers toevoegen aan geselecteerde URL's"
 
 msgid "Search users"
-msgstr "Zoek cursist"
+msgstr "Zoek gebruikers"
 
 msgid "The user accounts have been unassigned from the URL"
 msgstr "De gebruikersaccounts zijn uitgeschreven van de URL"
