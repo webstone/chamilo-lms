@@ -58,6 +58,8 @@ services:
         # fetching services directly from the container via $container->get() won't work.
         # The best practice is to be explicit about your dependencies anyway.
 
+    Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeFileSessionHandler:
+        arguments: ['%kernel.project_dir%/var/sessions']
     Vich\UploaderBundle\Naming\SubdirDirectoryNamer:
         public: true
 
