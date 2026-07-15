@@ -21,8 +21,11 @@
     @apply border-danger text-danger;
   }
 
+  // Matches .p-inputtext:disabled (_input_text.scss): gray border/text, no
+  // background override - other disabled fields stay white, so this one
+  // shouldn't stand out with a gray fill.
   &.p-disabled {
-    @apply bg-gray-25 opacity-100;
+    @apply border-gray-50 opacity-100;
   }
 
   &-dropdown {
@@ -47,6 +50,14 @@
     }
 
     .p-multiselect.p-invalid & {}
+
+    // Unlike .p-select-label (_select.scss), this had no disabled-state
+    // override at all - the selected value's text stayed full-strength
+    // text-gray-90 (near-black) instead of graying out like every other
+    // disabled field.
+    .p-multiselect.p-disabled & {
+      @apply text-gray-50;
+    }
 
     .p-chip {
       @apply px-3 py-0 rounded-full bg-support-2;

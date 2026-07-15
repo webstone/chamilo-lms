@@ -23,6 +23,7 @@ use ApiPlatform\OpenApi\Model\RequestBody;
 use ApiPlatform\Serializer\Filter\PropertyFilter;
 use ArrayObject;
 use Chamilo\CoreBundle\Controller\Api\CreateDocumentFileAction;
+use Chamilo\CoreBundle\Controller\Api\CreateHomeworkSubmissionFileAction;
 use Chamilo\CoreBundle\Controller\Api\DocumentLearningPathUsageAction;
 use Chamilo\CoreBundle\Controller\Api\DocumentUsageAction;
 use Chamilo\CoreBundle\Controller\Api\DownloadAllDocumentsAction;
@@ -159,6 +160,61 @@ use Symfony\Component\Validator\Constraints as Assert;
                 ),
             ),
             security: "is_granted('ROLE_CURRENT_COURSE_TEACHER') or is_granted('ROLE_CURRENT_COURSE_SESSION_TEACHER')",
+            validationContext: ['groups' => ['Default', 'media_object_create', 'document:write']],
+            deserialize: false
+        ),
+        new Post(
+            uriTemplate: '/documents/homework-submission-upload',
+            controller: CreateHomeworkSubmissionFileAction::class,
+            openapi: new Operation(
+                summary: 'Upload a file for a homework submission or form-field answer (student-facing).',
+                requestBody: new RequestBody(
+                    content: new ArrayObject([
+                        'multipart/form-data' => [
+                            'schema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'title' => ['type' => 'string'],
+                                    'filetype' => [
+                                        'type' => 'string',
+                                        'enum' => ['folder', 'file'],
+                                    ],
+                                    'comment' => ['type' => 'string'],
+                                    'uploadFile' => [
+                                        'type' => 'string',
+                                        'format' => 'binary',
+                                    ],
+                                    'parentResourceNodeId' => ['type' => 'integer'],
+                                    'resourceLinkList' => [
+                                        'type' => 'array',
+                                        'items' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'visibility' => ['type' => 'integer'],
+                                            ],
+                                        ],
+                                    ],
+                                    'fileExistsOption' => [
+                                        'type' => 'string',
+                                        'enum' => ['overwrite', 'skip', 'rename'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ]),
+                ),
+            ),
+            // Course/session-contextual (not the global ROLE_STUDENT the
+            // c_student_publications/upload precedent uses) - CidReqListener
+            // has already validated cid/sid access earlier in this same
+            // request (throwing 403/404 otherwise), so by the time this
+            // security expression runs the requester is a confirmed member of
+            // the current course/session. Includes the teacher roles too so a
+            // teacher hitting this same endpoint (e.g. grading UI attaching a
+            // file) is not blocked, even though teachers also have the
+            // general /documents endpoint available.
+            security: "is_granted('ROLE_CURRENT_COURSE_STUDENT') or is_granted('ROLE_CURRENT_COURSE_SESSION_STUDENT')"
+                ." or is_granted('ROLE_CURRENT_COURSE_TEACHER') or is_granted('ROLE_CURRENT_COURSE_SESSION_TEACHER')",
             validationContext: ['groups' => ['Default', 'media_object_create', 'document:write']],
             deserialize: false
         ),

@@ -1,0 +1,10 @@
+/**
+ * See: src/CourseBundle/Entity/CHomeworkAssignment.php
+ */
+
+export const HOMEWORK_ASSIGNMENT_TYPE_FILE = 1
+export const HOMEWORK_ASSIGNMENT_TYPE_FORM = 2
+
+export const HOMEWORK_ASSIGNMENT_EVALUATION_NONE = 1
+export const HOMEWORK_ASSIGNMENT_EVALUATION_STATUS_ONLY = 2
+export const HOMEWORK_ASSIGNMENT_EVALUATION_SCORE = 3

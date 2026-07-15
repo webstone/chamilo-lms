@@ -7,8 +7,35 @@
   @apply block w-full;
 }
 
+// .tiny-content is used in two different contexts: as the TinyMCE iframe's
+// own <body> class (BaseTinyEditor.vue's body_class) while editing, AND as a
+// plain wrapper <div> around already-saved rich text wherever it's rendered
+// read-only elsewhere in Chamilo (course description, forum posts, a
+// submitted Homework report, ...). The padding below must only apply to the
+// former - scoping it to "body.tiny-content" (never true for the read-only
+// wrapper, which is always a div) achieves that without a class collision,
+// and incidentally also avoids the double-padding a generic ".tiny-content"
+// rule would cause once the saved HTML's own <div class="tiny-content">
+// wrapper (see the GetContent hook in BaseTinyEditor.vue) ends up nested
+// inside that same iframe body while editing.
+body.tiny-content {
+  @apply p-4;
+}
+
 .tiny-content * {
   @apply box-border;
+}
+
+// Restore list indentation/markers: Tailwind's preflight strips ul/ol's
+// default list-style and padding platform-wide, and nothing else in this
+// stylesheet was compensating for it - bullets/numbers rendered flush with
+// (or left of) the surrounding text instead of indented under it.
+.tiny-content ul {
+  @apply list-disc pl-6;
+}
+
+.tiny-content ol {
+  @apply list-decimal pl-6;
 }
 
 // Specific styles for TinyMCE content

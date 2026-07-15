@@ -21,8 +21,11 @@
     @apply border-danger;
   }
 
+  // Matches .p-inputtext:disabled (_input_text.scss): gray border/text, no
+  // background override - other disabled fields stay white, so this one
+  // shouldn't stand out with a gray fill.
   &.p-disabled {
-    @apply bg-gray-25 opacity-100;
+    @apply border-gray-50 opacity-100;
   }
 
   &-clear-icon {

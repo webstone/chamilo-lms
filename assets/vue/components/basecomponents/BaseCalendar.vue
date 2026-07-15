@@ -75,6 +75,23 @@ const props = defineProps({
     required: false,
     default: false,
   },
+  // The float-label CSS (_float_label.scss) floats the label whenever the
+  // input has a value, is focused, OR has a `placeholder` attribute present.
+  // Without a placeholder, an empty BaseCalendar's label sits inline until
+  // the user interacts with it, which looks inconsistent next to a field
+  // that already has a value. Pass a non-empty placeholder (e.g. " ") to
+  // keep the label floated at all times - same trigger BaseInputText/BaseSelect
+  // rely on via FloatLabel's default "on" variant.
+  placeholder: {
+    type: String,
+    required: false,
+    default: null,
+  },
+  disabled: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
 })
 
 function getLocalePrefix(locale) {
@@ -163,10 +180,12 @@ const onCancelClick = () => {
         ref="datepickerRef"
         v-model="internalValue"
         :date-format="dateFormat"
+        :disabled="disabled"
         :inline="showInline"
         :input-id="id"
         :invalid="isInvalid"
         :manual-input="allowManualInput"
+        :placeholder="placeholder"
         :selection-mode="type"
         :show-time="showTime"
         :step-minute="timepicketIncrement"

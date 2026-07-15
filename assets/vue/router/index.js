@@ -23,6 +23,7 @@ import roomRoutes from "./room"
 //import courseCategoryRoutes from './coursecategory';
 import documents from "./documents"
 import assignments from "./assignments"
+import homework from "./homework"
 import links from "./links"
 import glossary from "./glossary"
 import attendance from "./attendance"
@@ -318,6 +319,7 @@ const router = createRouter({
     //courseCategoryRoutes,
     documents,
     assignments,
+    homework,
     links,
     glossary,
     attendance,
@@ -485,6 +487,30 @@ router.beforeResolve(async (to) => {
     }
   } else {
     cidReqStore.resetCid()
+  }
+
+  // Role-gated course-tool routes (defense-in-depth on top of backend
+  // security checks) - e.g. HomeworkCorrectAndRate, whose "Correct" link is
+  // only hidden client-side by HomeworkList.vue's v-if="isTeacher". Without
+  // this, a student navigating directly to the route's URL would still see
+  // the grading UI (the backend PUT itself is separately locked down, but a
+  // student should never even reach this screen). Mirrors the exact
+  // "isTeacher" role combination already used by HomeworkList.vue, evaluated
+  // here (not in the earlier beforeEach) because the course/session-scoped
+  // roles above are only available once cidReqStore has resolved.
+  const requiresCourseTeacher = to.matched.some((record) => record.meta?.requiresCourseTeacher === true)
+  if (requiresCourseTeacher) {
+    const platformConfigStore = usePlatformConfig()
+    const isCourseTeacher =
+      (securityStore.isCurrentTeacher ||
+        securityStore.isCourseAdmin ||
+        securityStore.isAdmin ||
+        securityStore.isTeacher) &&
+      !platformConfigStore.isStudentViewActive
+
+    if (!isCourseTeacher) {
+      return { name: "Home", replace: true }
+    }
   }
 })
 

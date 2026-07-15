@@ -14,6 +14,7 @@ use Chamilo\CoreBundle\Entity\Tool;
 use Chamilo\CoreBundle\Tool\AbstractTool;
 use Chamilo\CoreBundle\Tool\GlobalTool;
 use Chamilo\CoreBundle\Tool\ToolChain;
+use Chamilo\CourseBundle\Entity\CTool;
 use Chamilo\Tests\AbstractApiTest;
 use Chamilo\Tests\ChamiloTestTrait;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -183,5 +184,28 @@ class ToolChainTest extends AbstractApiTest
         $em->flush();
 
         $this->assertNotNull($resourceType->getId());
+    }
+
+    public function testHuiswerkToolIsOrderedRightAfterDropboxOnNewCourse(): void
+    {
+        self::bootKernel();
+
+        $course = $this->createCourse('Tool Order Course');
+
+        $em = $this->getEntityManager();
+        $ctoolRepo = $em->getRepository(CTool::class);
+
+        /** @var CTool $dropboxTool */
+        $dropboxTool = $ctoolRepo->findOneBy(['course' => $course, 'title' => 'dropbox']);
+        /** @var CTool $huiswerkTool */
+        $huiswerkTool = $ctoolRepo->findOneBy(['course' => $course, 'title' => 'huiswerk']);
+
+        $this->assertNotNull($dropboxTool, 'dropbox tool was not created for the new course');
+        $this->assertNotNull($huiswerkTool, 'huiswerk tool was not created for the new course');
+        $this->assertSame(
+            $dropboxTool->getPosition() + 1,
+            $huiswerkTool->getPosition(),
+            'huiswerk should be positioned immediately after dropbox on newly created courses'
+        );
     }
 }

@@ -110,7 +110,7 @@ abstract class AbstractResource
      *
      * @var array<int, array<string, int>>
      */
-    #[Groups(['c_tool_intro:write', 'resource_node:write', 'c_student_publication:write', 'calendar_event:write', 'attendance:write'])]
+    #[Groups(['c_tool_intro:write', 'resource_node:write', 'c_student_publication:write', 'calendar_event:write', 'attendance:write', 'homework_assignment:write', 'homework_form:write', 'homework_submission:write'])]
     public array $resourceLinkList = [];
 
     /**

@@ -3,6 +3,7 @@
     <FloatLabel variant="on">
       <MultiSelect
         v-model="selectedValues"
+        :disabled="disabled"
         :options="options"
         display="chip"
         fluid
@@ -76,6 +77,11 @@ const props = defineProps({
     type: String,
     required: false,
     default: "id",
+  },
+  disabled: {
+    type: Boolean,
+    required: false,
+    default: false,
   },
 })
 const emit = defineEmits(["update:modelValue"])

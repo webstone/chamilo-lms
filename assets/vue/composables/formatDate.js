@@ -57,10 +57,19 @@ export function useFormatDate() {
   const abbreviatedDate = (datetime) =>
     getDateTimeObject(datetime)?.toLocaleString({ ...DateTime.DATE_MED, month: "long" })
 
+  // Fixed dd/mm/yyyy and HH:mm formats (locale-agnostic on purpose) for
+  // callers building their own "Submitted on {date} at {time}"-style
+  // translated template rather than using Luxon's localized medium format.
+  const shortDate = (datetime) => getDateTimeObject(datetime)?.toFormat("dd/MM/yyyy")
+
+  const shortTime = (datetime) => getDateTimeObject(datetime)?.toFormat("HH:mm")
+
   return {
     abbreviatedDatetime,
     relativeDatetime,
     getCurrentTimezone,
     abbreviatedDate,
+    shortDate,
+    shortTime,
   }
 }

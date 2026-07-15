@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Chamilo\CoreBundle\DataProvider\Extension;
 
+use Chamilo\CoreBundle\Entity\Course;
 use Chamilo\CoreBundle\Entity\ResourceLink;
 use Doctrine\ORM\QueryBuilder;
 
 /**
  * You should inject Symfony\Bundle\SecurityBundle\Security in the constructor.
+ * resolveCourseFromRequest() additionally requires
+ * Doctrine\ORM\EntityManagerInterface $entityManager and
+ * Symfony\Component\HttpFoundation\RequestStack $requestStack.
  */
 trait CourseLinkExtensionTrait
 {
@@ -62,5 +66,23 @@ trait CourseLinkExtensionTrait
         return $this->security->isGranted('ROLE_ADMIN')
             || \in_array('ROLE_CURRENT_COURSE_TEACHER', $roles, true)
             || \in_array('ROLE_CURRENT_COURSE_SESSION_TEACHER', $roles, true);
+    }
+
+    /**
+     * Resolves the `cid` query parameter into a Course entity, for the
+     * course-wide-teacher privilege check the Huiswerk extensions
+     * (CHomeworkAssignmentExtension/CHomeworkSubmissionExtension/
+     * CHomeworkFormExtension) share. Not course-scoped-visibility-related on
+     * its own, so it lives here only to avoid three byte-for-byte copies.
+     */
+    protected function resolveCourseFromRequest(): ?Course
+    {
+        $cid = $this->requestStack->getCurrentRequest()?->query->get('cid');
+
+        if (empty($cid)) {
+            return null;
+        }
+
+        return $this->entityManager->find(Course::class, $cid);
     }
 }

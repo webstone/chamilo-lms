@@ -215,8 +215,16 @@ export default {
    *    document hangs orphaned (not visible in the course documents list). Reading the
    *    Pinia cidReq store directly here is the canonical source maintained by the
    *    router guards and survives URL changes.
+   *
+   * `endpoint` defaults to the general (teacher-only) Documents-tool upload
+   * route. HomeworkSubmit.vue passes "/api/documents/homework-submission-upload"
+   * instead - CDocument's default /documents Post operation is gated by
+   * "ROLE_CURRENT_COURSE_TEACHER or ROLE_CURRENT_COURSE_SESSION_TEACHER", so a
+   * plain student uploading their own submission file/answer attachment would
+   * get a 403 there (mirrors the existing c_student_publications/upload
+   * precedent for the same problem in the Werk/Assignments module).
    */
-  async createWithFormData(payload) {
+  async createWithFormData(payload, endpoint = "/api/documents") {
     const prepared = flattenSearchFieldValues(payload)
     const formData = buildFormData(prepared)
 
@@ -246,7 +254,7 @@ export default {
     if (gid > 0) params.gid = gid
 
     try {
-      const response = await api.post("/api/documents", formData, { params })
+      const response = await api.post(endpoint, formData, { params })
       return asResponse(response)
     } catch (error) {
       throw toServiceError(error)

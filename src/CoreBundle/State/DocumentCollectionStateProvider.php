@@ -67,6 +67,10 @@ final class DocumentCollectionStateProvider implements ProviderInterface
             return [];
         }
 
+        // Captured once and reused below (role check, ownership filter, cache
+        // key) instead of calling $this->security->getUser() repeatedly.
+        $currentUser = $this->security->getUser();
+
         $qb = $this->entityManager
             ->getRepository(CDocument::class)
             ->createQueryBuilder('d')
@@ -208,6 +212,10 @@ final class DocumentCollectionStateProvider implements ProviderInterface
             $parentNodeId = (int) $query['resourceNode_parent'];
         }
 
+        // Referenced again below when building the cache key (needs to be in
+        // scope, and default to a safe value, even when $hasContext is false).
+        $allowDraft = false;
+
         if ($hasContext) {
             // Contextual hierarchy based on ResourceLink.parent
             $qb->innerJoin('rn.resourceLinks', 'rl')->addSelect('rl');
@@ -215,7 +223,7 @@ final class DocumentCollectionStateProvider implements ProviderInterface
             // Hide DRAFT-visibility links from non-teachers. Mirrors the
             // canonical rule in CourseLinkExtensionTrait::addVisibilityCondition
             // — needed here because the custom provider bypasses CDocumentExtension.
-            $roles = $this->security->getUser()?->getRoles() ?? [];
+            $roles = $currentUser?->getRoles() ?? [];
             $allowDraft = $this->security->isGranted('ROLE_ADMIN')
                 || \in_array('ROLE_CURRENT_COURSE_TEACHER', $roles, true)
                 || \in_array('ROLE_CURRENT_COURSE_SESSION_TEACHER', $roles, true);
@@ -224,6 +232,32 @@ final class DocumentCollectionStateProvider implements ProviderInterface
                 $qb
                     ->andWhere('rl.visibility != :visibilityDraft')
                     ->setParameter('visibilityDraft', ResourceLink::VISIBILITY_DRAFT)
+                ;
+
+                // Hide user-scoped (private) documents from every OTHER user.
+                // A user-scoped ResourceLink (rl.user set) means "this document
+                // belongs to one specific person" - e.g. a homework submission
+                // file (CreateHomeworkSubmissionFileAction always tags its
+                // ResourceLink with the uploading student's id). This provider
+                // bypasses CDocumentExtension entirely (it is registered as this
+                // operation's own `provider:`, so QueryCollectionExtensionInterface
+                // implementations for CDocument never run here), and previously
+                // had no row-level ownership check at all - harmless while the
+                // only way to create a CDocument was the teacher-only /documents
+                // endpoint (nothing was ever user-scoped), but a real metadata
+                // leak (filename, uploader identity, upload time - not the file
+                // content itself, since the item-level Get still 403s) once a
+                // student-facing upload path could create user-scoped documents.
+                // Teachers/admins keep the $allowDraft bypass, same rationale as
+                // the draft-visibility check above.
+                $qb
+                    ->andWhere(
+                        $qb->expr()->orX(
+                            'rl.user IS NULL',
+                            'IDENTITY(rl.user) = :homeworkDocumentOwner'
+                        )
+                    )
+                    ->setParameter('homeworkDocumentOwner', $currentUser instanceof User ? $currentUser->getId() : 0)
                 ;
             }
 
@@ -411,9 +445,22 @@ final class DocumentCollectionStateProvider implements ProviderInterface
         sort($sortedTypes);
         $sortedHidden = $hiddenSystemTypes;
         sort($sortedHidden);
+        // $viewerProfileBucket only varies by ROLE (e.g. "session_student"),
+        // not by individual identity - fine for every other filter in this
+        // provider, since they only ever depend on role/context. The new
+        // user-scoped-document ownership filter above is the first one that
+        // depends on WHICH specific user is asking, so two different students
+        // (same role bucket) must not share a cache entry, or the second one
+        // to query within the 120s window would silently get back the first
+        // one's cached iid list - the exact same class of leak as the missing
+        // WHERE clause itself, just via the cache instead of the query.
+        $ownershipCacheUserId = ($hasContext && !$allowDraft)
+            ? ($currentUser instanceof User ? $currentUser->getId() : 0)
+            : 0;
         $cacheKey = 'doc_list_'.$this->getInstallationPrefix().'_'.hash('md5', serialize([
             $accessUrlId,
             $viewerProfileBucket,
+            $ownershipCacheUserId,
             $course?->getId() ?? 0,
             $session?->getId() ?? 0,
             $group?->getIid() ?? 0,

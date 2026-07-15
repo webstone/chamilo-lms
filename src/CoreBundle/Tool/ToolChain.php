@@ -136,7 +136,11 @@ class ToolChain
         $manager = $this->entityManager;
         $activeToolsOnCreate = $this->settingsManager->getSetting('course.active_tools_on_create') ?? [];
 
-        // Hardcoded tool list order
+        // Hardcoded tool list order - this also drives the CTool::$position
+        // that Gedmo\SortablePosition assigns as each CTool below is added to
+        // the course, so the order of this array is the order tools appear
+        // in a newly created course's tool menu (see the foreach below,
+        // which iterates $toolList itself rather than $tools).
         $toolList = [
             'course_description',
             'document',
@@ -151,6 +155,7 @@ class ToolChain
             'agenda',
             'forum',
             'dropbox',
+            'huiswerk',
             'blog',
             'member',
             'group',
@@ -166,19 +171,23 @@ class ToolChain
             'course_maintenance',
             'portfolio',
         ];
-        $toolList = array_flip($toolList);
 
         $toolRepo = $manager->getRepository(Tool::class);
 
-        $tools = $this->handlerCollection->getCollection();
+        $toolsByTitle = [];
+        foreach ($this->handlerCollection->getCollection() as $tool) {
+            $toolsByTitle[$tool->getTitle()] = $tool;
+        }
 
-        foreach ($tools as $tool) {
+        foreach ($toolList as $title) {
+            $tool = $toolsByTitle[$title] ?? null;
+            if (!$tool) {
+                continue;
+            }
+
             $criteria = [
                 'title' => $tool->getTitle(),
             ];
-            if (!isset($toolList[$tool->getTitle()])) {
-                continue;
-            }
 
             $visibility = \in_array($tool->getTitle(), $activeToolsOnCreate, true);
             $linkVisibility = $visibility ? ResourceLink::VISIBILITY_PUBLISHED : ResourceLink::VISIBILITY_DRAFT;

@@ -7,7 +7,6 @@ declare(strict_types=1);
 namespace Chamilo\CoreBundle\DataProvider\Extension;
 
 use ApiPlatform\Doctrine\Orm\Extension\QueryCollectionExtensionInterface;
-// use ApiPlatform\Core\Bridge\Doctrine\Orm\Extension\QueryItemExtensionInterface;
 use ApiPlatform\Doctrine\Orm\Util\QueryNameGeneratorInterface;
 use ApiPlatform\Metadata\Operation;
 use Chamilo\CourseBundle\Entity\CDocument;
@@ -17,9 +16,20 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 /**
- * Extension is called when loading api/documents.json.
+ * NOTE: effectively unreachable for CDocument today. CDocument's only
+ * GetCollection operation declares its own `provider:` (see
+ * DocumentCollectionStateProvider), which replaces API Platform's default
+ * CollectionProvider entirely - the one that would normally invoke every
+ * registered QueryCollectionExtensionInterface, this one included. Row-level
+ * scoping for that operation (course/session/group/visibility, plus the
+ * user-scoped-document ownership check) lives directly in
+ * DocumentCollectionStateProvider::provide() instead. Left in place (rather
+ * than deleted) only because removing it is out of scope for the change that
+ * prompted this note; do not extend or rely on this class for CDocument
+ * without first confirming it actually runs for whatever operation you're
+ * touching.
  */
-final class CDocumentExtension implements QueryCollectionExtensionInterface // , QueryItemExtensionInterface
+final class CDocumentExtension implements QueryCollectionExtensionInterface
 {
     use CourseLinkExtensionTrait;
 
@@ -38,22 +48,13 @@ final class CDocumentExtension implements QueryCollectionExtensionInterface // ,
         $this->addWhere($queryBuilder, $resourceClass);
     }
 
-    /*public function applyToItem(QueryBuilder $queryBuilder, QueryNameGeneratorInterface $queryNameGenerator, string $resourceClass, array $identifiers, string $operationName = null, array $context = []): void
-    {
-        $this->addWhere($queryBuilder, $resourceClass);
-    }*/
-
     private function addWhere(QueryBuilder $queryBuilder, string $resourceClass): void
     {
         if (CDocument::class !== $resourceClass) {
             return;
         }
 
-        /*if ($this->security->isGranted('ROLE_ADMIN')) {
-            return;
-        }*/
-
-        if (null === $user = $this->security->getUser()) {
+        if (null === $this->security->getUser()) {
             throw new AccessDeniedException('Access Denied.');
         }
 
@@ -73,11 +74,5 @@ final class CDocumentExtension implements QueryCollectionExtensionInterface // ,
         }
 
         $this->addCourseLinkWithVisibilityConditions($queryBuilder, true);
-
-        /*$queryBuilder->
-            andWhere('node.creator = :current_user')
-        ;*/
-        // $queryBuilder->andWhere(sprintf('%s.node.creator = :current_user', $rootAlias));
-        // $queryBuilder->setParameter('current_user', $user->getId());
     }
 }

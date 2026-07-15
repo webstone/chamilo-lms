@@ -6,6 +6,7 @@
         :aria-label="label"
         :class="['w-full', { 'p-invalid': isInvalid }, $attrs.class]"
         v-bind="$attrs"
+        :disabled="disabled"
         :model-value="modelValue"
         type="text"
         @update:model-value="$emit('update:modelValue', $event)"
@@ -30,7 +31,7 @@ import { useI18n } from "vue-i18n"
 
 const { t } = useI18n()
 
-const props = defineProps({
+defineProps({
   id: {
     type: String,
     required: true,
@@ -51,6 +52,11 @@ const props = defineProps({
     default: null,
   },
   isInvalid: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
+  disabled: {
     type: Boolean,
     required: false,
     default: false,
