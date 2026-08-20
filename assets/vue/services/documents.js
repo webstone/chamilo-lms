@@ -360,7 +360,7 @@ export default {
     const response = await baseService.postRaw(
       "/api/documents/download-all",
       { rootNodeId },
-      { responseType: "blob", params },
+      { responseType: "blob", params, headers: { Accept: "application/zip" } },
     )
 
     return response.data
@@ -372,7 +372,11 @@ export default {
    * @returns {Promise<Blob>}
    */
   async downloadSelected(ids) {
-    const response = await baseService.postRaw("/api/documents/download-selected", { ids }, { responseType: "blob" })
+    const response = await baseService.postRaw(
+      "/api/documents/download-selected",
+      { ids },
+      { responseType: "blob", headers: { Accept: "application/zip" } },
+    )
 
     return response.data
   },

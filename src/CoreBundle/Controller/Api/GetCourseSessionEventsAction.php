@@ -14,6 +14,7 @@ use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 
 #[AsController]
@@ -24,24 +25,34 @@ final class GetCourseSessionEventsAction
         private readonly Security $security,
     ) {}
 
-    public function __invoke(Course $data): JsonResponse
+    public function __invoke(Course $data, Request $request): JsonResponse
     {
         $now = new DateTime('now');
         $viewer = $this->security->getUser();
+        $sid = (int) $request->query->get('sid', 0);
 
-        // Fetch all sessions attached to this course via the SessionRelCourse join entity.
+        // Fetch sessions attached to this course via the SessionRelCourse join entity.
         // Session::$courses is a OneToMany to SessionRelCourse, and SessionRelCourse has a
         // ManyToOne to Course stored as 'course'. We join through 's.courses' (the collection
         // of SessionRelCourse rows) and filter by 'src.course = :course'.
-        $sessions = $this->em->createQueryBuilder()
+        // When ?sid=<id> is present (the agenda is scoped to one specific session, not the
+        // whole course), restrict to that single session - otherwise every session ever
+        // linked to this course renders as a full-range marker simultaneously, which is
+        // confusing when a course has multiple, unrelated sessions (reported as "sessions
+        // from a different month leaking in" / "looks like it happens every day").
+        $qb = $this->em->createQueryBuilder()
             ->select('s')
             ->from(Session::class, 's')
             ->innerJoin('s.courses', 'src')
             ->where('src.course = :course')
             ->setParameter('course', $data)
-            ->getQuery()
-            ->getResult()
         ;
+
+        if ($sid > 0) {
+            $qb->andWhere('s.id = :sessionId')->setParameter('sessionId', $sid);
+        }
+
+        $sessions = $qb->getQuery()->getResult();
 
         $enrolledSessionIds = [];
         if ($viewer instanceof User && [] !== $sessions) {

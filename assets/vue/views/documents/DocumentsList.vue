@@ -53,26 +53,12 @@
       @click="openNew"
     />
     <BaseButton
-      v-if="showNewDrawingButton"
-      :label="t('New drawing')"
-      icon="drawing"
-      only-icon
-      type="success"
-    />
-    <BaseButton
       v-if="showRecordAudioButton"
       :label="t('Record audio')"
       icon="record-add"
       only-icon
       type="success"
       @click="showRecordAudioDialog"
-    />
-    <BaseButton
-      v-if="showNewCloudFileButton"
-      :label="t('New cloud file')"
-      icon="file-cloud-add"
-      only-icon
-      type="success"
     />
     <BaseButton
       v-if="showSlideshowButton"
@@ -738,9 +724,7 @@ const {
   showNewDocumentButton,
   showUploadButton,
   showNewFolderButton,
-  showNewDrawingButton,
   showRecordAudioButton,
-  showNewCloudFileButton,
   showSlideshowButton,
   showUsageButton,
   showDownloadAllButton,
@@ -1359,14 +1343,6 @@ function goToNewDocument() {
 function goToUploadFile() {
   router.push({
     name: "DocumentsUploadFile",
-    query: route.query,
-  })
-}
-
-function goToNewDrawing() {
-  router.push({
-    name: "DocumentsSvgEditor",
-    params: { node: route.params.node },
     query: route.query,
   })
 }

@@ -19,9 +19,7 @@ export function useDocumentActionButtons() {
   const showNewDocumentButton = computed(() => isTeacherUI.value && !isCertificateMode.value)
   const showUploadButton = computed(() => isTeacherUI.value && !isCertificateMode.value)
   const showNewFolderButton = computed(() => isTeacherUI.value && !isCertificateMode.value)
-  const showNewDrawingButton = computed(() => isTeacherUI.value && !isCertificateMode.value)
   const showRecordAudioButton = computed(() => isTeacherUI.value && !isCertificateMode.value)
-  const showNewCloudFileButton = computed(() => isTeacherUI.value && !isCertificateMode.value)
 
   const showSlideshowButton = computed(() => true)
 
@@ -36,9 +34,7 @@ export function useDocumentActionButtons() {
     showNewDocumentButton,
     showUploadButton,
     showNewFolderButton,
-    showNewDrawingButton,
     showRecordAudioButton,
-    showNewCloudFileButton,
     showSlideshowButton,
     showUsageButton,
     showDownloadAllButton,

@@ -268,7 +268,7 @@ const sendMessage = async () => {
   try {
     const result = await baseService.post("/social-network/user-action", messageData)
     if (result.success) {
-      notification.showSuccessNotification("Message sent successfully.")
+      notification.showSuccessNotification(t("Message sent successfully."))
     } else {
       notification.showErrorNotification("Failed to send message.")
     }

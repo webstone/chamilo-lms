@@ -402,7 +402,11 @@ let currentEvent = null
 
 // --- Course-session virtual event source (read-only markers in the Agenda) ---
 const courseIdForSessionEvents = computed(() => course.value?.id ?? null)
-const { events: sessionEvents, refetch: refetchSessionEvents } = useCourseSessionEvents(courseIdForSessionEvents)
+const sessionIdForSessionEvents = computed(() => session.value?.id ?? 0)
+const { events: sessionEvents, refetch: refetchSessionEvents } = useCourseSessionEvents(
+  courseIdForSessionEvents,
+  sessionIdForSessionEvents,
+)
 const isAdminViewer = computed(() => securityStore.isAdmin)
 
 const popoverOpen = ref(false)
@@ -417,8 +421,12 @@ onMounted(() => {
   refetchSessionEvents()
 })
 
+// Session markers are now scoped server-side to the viewed session (sid), so a
+// session switch within the same mounted course view - not just a course
+// switch - must also re-trigger the fetch, or the previous session's markers
+// would linger.
 watch(
-  () => course.value?.id,
+  [() => course.value?.id, () => session.value?.id],
   () => {
     refetchSessionEvents()
   },
@@ -502,7 +510,15 @@ function showAddEventDialog() {
 }
 
 const calendarOptions = ref({
-  timeZone: timezone,
+  // "local" (not the configured platform/user `timezone`) - FullCalendar's
+  // core only has real IANA-zone/DST support via the @fullcalendar/moment-timezone
+  // plugin, which isn't installed here. Passing a named zone like
+  // "Europe/Brussels" without it produced a silent 2-hour (CEST) offset
+  // between what a user drag-selected in day/week view and what the
+  // create-event dialog then showed. "local" makes FullCalendar use the
+  // browser's own timezone for its date math, matching what the dialog's
+  // PrimeVue DatePicker already does - consistent, no extra dependency.
+  timeZone: "local",
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
   locales: allLocales,
   locale: calendarLocale?.code ?? "en-GB",
@@ -676,47 +692,45 @@ const calendarOptions = ref({
     // Style hook for session-derived virtual events only. Their ids are
     // assigned the form `session-<id>` by useCourseSessionEvents — keep the
     // convention in sync if it ever changes.
-    if (!String(info.event.id || "").startsWith("session-")) return
+    if (String(info.event.id || "").startsWith("session-")) {
+      const ep = info.event.extendedProps || {}
+      info.el.classList.add("chamilo-session-event")
 
-    const ep = info.event.extendedProps || {}
-    info.el.classList.add("chamilo-session-event")
+      if (ep.isPast) {
+        info.el.classList.add("chamilo-session-event--past")
+        info.el.style.opacity = "0.5"
+        info.el.style.backgroundColor = "#9ca3af"
+        info.el.style.borderColor = "#9ca3af"
+      } else {
+        info.el.style.opacity = "1"
+        info.el.style.backgroundColor = "rgb(var(--color-primary-base))"
+        info.el.style.borderColor = "rgb(var(--color-primary-base))"
+        // Force white text on the brand-coloured bg. The OWC theme sets
+        // --color-primary-button-alternative-text to 0 0 0 (black) which is
+        // unreadable on olive green; the default Chamilo theme uses 255 255 255.
+        // Hardcoding white guarantees contrast on any active theme.
+        info.el.style.color = "#ffffff"
+      }
 
-    if (ep.isPast) {
-      info.el.classList.add("chamilo-session-event--past")
-      info.el.style.opacity = "0.5"
-      info.el.style.backgroundColor = "#9ca3af"
-      info.el.style.borderColor = "#9ca3af"
-    } else {
-      info.el.style.opacity = "1"
-      info.el.style.backgroundColor = "rgb(var(--color-primary-base))"
-      info.el.style.borderColor = "rgb(var(--color-primary-base))"
-      // Force white text on the brand-coloured bg. The OWC theme sets
-      // --color-primary-button-alternative-text to 0 0 0 (black) which is
-      // unreadable on olive green; the default Chamilo theme uses 255 255 255.
-      // Hardcoding white guarantees contrast on any active theme.
-      info.el.style.color = "#ffffff"
+      // Dot indicator (FullCalendar uses --fc-event-bg-color for the dot's
+      // border-color in dayGridMonth view). White on the brand bg, matching
+      // the event text. Past events keep the muted-grey dot.
+      info.el.style.setProperty("--fc-event-bg-color", ep.isPast ? "#9ca3af" : "#ffffff")
+
+      if (ep.isViewerEnrolled) {
+        info.el.classList.add("chamilo-session-event--mine")
+        info.el.style.borderLeft = "4px solid #f59e0b"
+        info.el.style.fontWeight = "600"
+      }
+
+      info.el.setAttribute(
+        "aria-label",
+        `${info.event.title}, ${ep.isPast ? "past session" : "upcoming session"}` +
+          (ep.isViewerEnrolled ? ", you are enrolled" : ""),
+      )
+      info.el.title = ep.sessionTitle || info.event.title
     }
 
-    // Dot indicator (FullCalendar uses --fc-event-bg-color for the dot's
-    // border-color in dayGridMonth view). White on the brand bg, matching
-    // the event text. Past events keep the muted-grey dot.
-    info.el.style.setProperty("--fc-event-bg-color", ep.isPast ? "#9ca3af" : "#ffffff")
-
-    if (ep.isViewerEnrolled) {
-      info.el.classList.add("chamilo-session-event--mine")
-      info.el.style.borderLeft = "4px solid #f59e0b"
-      info.el.style.fontWeight = "600"
-    }
-
-    info.el.setAttribute(
-      "aria-label",
-      `${info.event.title}, ${ep.isPast ? "past session" : "upcoming session"}` +
-        (ep.isViewerEnrolled ? ", you are enrolled" : ""),
-    )
-    info.el.title = ep.sessionTitle || info.event.title
-  },
-
-  eventDidMount(info) {
     applyCalendarEventPresentation(info)
   },
 })

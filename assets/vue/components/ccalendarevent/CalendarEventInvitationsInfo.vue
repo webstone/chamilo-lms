@@ -13,16 +13,16 @@ defineProps({
 </script>
 
 <template>
-  <div class="invitations-info">
+  <div
+    v-if="event.resourceLinkListFromEntity.length"
+    class="invitations-info"
+  >
     <h6
-      v-text="t('Invitations')"
+      v-text="t('Event invitations')"
       class="invitations-info__title"
     />
 
-    <div
-      v-if="event.resourceLinkListFromEntity.length"
-      class="invitations-info__item"
-    >
+    <div class="invitations-info__item">
       <p v-text="t('Invitees')" />
       <div>
         <ShowLinks

@@ -584,13 +584,18 @@ function mapToBaseItem(e) {
 
   if (start && end && end < start) end = start.plus({ days: 1 })
 
-  const durationDays = start && end ? end.diff(start, "days").days : 0
-  const looksMultiDay = Number.isFinite(durationDays) && durationDays >= 1
+  // A genuinely all-day event has both endpoints sitting exactly on midnight
+  // (start-of-day) - a real, timed multi-day event (e.g. 10:00 day 1 -> 15:00
+  // day 2) must NOT be treated as all-day just because it spans >1 calendar
+  // day. Luxon's startOf("day") comparison catches this precisely; duration
+  // alone (the previous "looksMultiDay >= 1 day" check) does not.
+  const looksAllDayByTimes =
+    !!start && !!end && start.equals(start.startOf("day")) && end.equals(end.startOf("day"))
 
   const allDay =
     Boolean(e?.allDay === true) ||
     Boolean(payload?.allDay === true) ||
-    looksMultiDay ||
+    looksAllDayByTimes ||
     (typeof e?.start === "string" && String(e.start).length === 10)
 
   if (allDay && start) {

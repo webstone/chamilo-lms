@@ -142,6 +142,59 @@ watch(
   },
 )
 
+function isSameCalendarDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+}
+
+// Workaround for a PrimeVue DatePicker limitation (selectionMode "range" +
+// showTime): its range+time click handling tracks a single shared
+// currentHour/currentMinute state instead of one per endpoint (see
+// onDateSelect/updateModelTime in primevue/datepicker). Picking the SAME
+// calendar day twice to build a same-day time range (e.g. 10:00 -> 17:00)
+// can silently discard the first click instead of completing the range,
+// whenever the shared time state at the moment of the second click compares
+// "earlier" than the time already baked into the first click - PrimeVue then
+// takes its "start a new selection" branch instead of its "set the end
+// date" branch (onDateSelect's `else` branch, which also leaves its internal
+// focusedDateIndex at 0/start). We can't intercept that internal comparison
+// (it runs before v-model ever sees the result), so instead we detect the
+// resulting signature - the model going from an incomplete [date, null]
+// straight to another incomplete [date, null] on the SAME day - and
+// reconstruct the range ourselves from the two clicked times rather than
+// accepting the reset. A genuine second click on a different day, or a
+// click that starts a brand new range after a complete one, are both left
+// untouched.
+//
+// Fixing the visible value alone isn't enough: PrimeVue's own internal
+// `rawValue` resyncs from our corrected v-model automatically (see its
+// `modelValue` watcher), but `focusedDateIndex` does not - it stays stuck
+// at 0 from the reset branch above, so every subsequent time-picker tick
+// would keep editing the START time instead of the END time we just fixed
+// up. `focusedDateIndex` is plain internal component data (same class of
+// property as `overlayVisible`, which this file already reaches into via
+// datepickerRef for hideOverlay()), so we correct it the same way.
+if ("range" === props.type) {
+  watch(internalValue, (newValue, oldValue) => {
+    if (!Array.isArray(newValue) || !Array.isArray(oldValue)) return
+
+    const [oldStart, oldEnd] = oldValue
+    const [newStart, newEnd] = newValue
+
+    if (!(oldStart instanceof Date) || null !== oldEnd) return
+    if (!(newStart instanceof Date) || null !== newEnd) return
+    if (oldStart.getTime() === newStart.getTime()) return
+    if (!isSameCalendarDay(oldStart, newStart)) return
+
+    const [earlier, later] = oldStart.getTime() <= newStart.getTime() ? [oldStart, newStart] : [newStart, oldStart]
+    internalValue.value = [earlier, later]
+
+    const instance = datepickerRef.value
+    if (instance && "focusedDateIndex" in instance) {
+      instance.focusedDateIndex = 1
+    }
+  })
+}
+
 // Safely hide the calendar overlay (PrimeVue internal API)
 const hideOverlay = () => {
   const instance = datepickerRef.value

@@ -20,6 +20,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 class CreateStudentPublicationCommentAction extends BaseResourceFileAction
@@ -33,7 +34,8 @@ class CreateStudentPublicationCommentAction extends BaseResourceFileAction
         TranslatorInterface $translator,
         MessageHelper $messageHelper,
         Security $security,
-        AiDisclosureHelper $aiDisclosureHelper
+        AiDisclosureHelper $aiDisclosureHelper,
+        UrlGeneratorInterface $urlGenerator
     ): CStudentPublicationComment {
         $fileExistsOption = $request->get('fileExistsOption', 'rename');
 
@@ -118,12 +120,41 @@ class CreateStudentPublicationCommentAction extends BaseResourceFileAction
             $receiverUser = $submission->getUser();
             $senderUserId = $managedUser->getId() ?? 0;
 
-            $subject = \sprintf('New feedback for your submission "%s"', $submission->getTitle());
-            $content = \sprintf(
-                'Hello %s, there is a new comment on your assignment submission "%s". Please review it in the platform.',
-                $receiverUser->getFullName(),
-                $submission->getTitle()
-            );
+            $subject = $translator->trans('New feedback for your submission "%s"', ['%s' => $submission->getTitle()]);
+
+            // Link straight to the submission's detail page (where the comment
+            // thread lives), mirroring the route/params TeacherAssignmentList.vue
+            // already builds client-side: AssignmentDetail's `node` param is the
+            // parent assignment's own resourceNode id, `id` is the parent
+            // assignment's iid - $submission itself is the individual student's
+            // uploaded item, so its publicationParent is the assignment task.
+            $assignmentEntity = $submission->getPublicationParent() ?? $submission;
+            $nodeId = $assignmentEntity->getResourceNode()?->getId();
+            $assignmentId = $assignmentEntity->getIid();
+
+            $link = null;
+            if ($nodeId && $assignmentId) {
+                $link = rtrim($urlGenerator->generate('index', [], UrlGeneratorInterface::ABSOLUTE_URL), '/')
+                    ."/resources/assignment/{$nodeId}/submission/{$assignmentId}";
+
+                $query = array_filter([
+                    'cid' => $request->query->get('cid'),
+                    'sid' => $request->query->get('sid'),
+                ]);
+                if ([] !== $query) {
+                    $link .= '?'.http_build_query($query);
+                }
+            }
+
+            $content = $link
+                ? $translator->trans(
+                    'Hello %name%, there is a new comment on your assignment submission "%title%". <a href="%link%">Review it in the platform</a>.',
+                    ['%name%' => $receiverUser->getFullName(), '%title%' => $submission->getTitle(), '%link%' => $link]
+                )
+                : $translator->trans(
+                    'Hello %name%, there is a new comment on your assignment submission "%title%". Please review it in the platform.',
+                    ['%name%' => $receiverUser->getFullName(), '%title%' => $submission->getTitle()]
+                );
 
             $messageHelper->sendMessageSimple(
                 $receiverUser->getId(),
