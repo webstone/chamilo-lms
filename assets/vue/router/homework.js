@@ -26,7 +26,7 @@ export default {
       // student from navigating to this path directly. The backend PUT
       // (HomeworkVoter::EDIT) remains the authoritative check; this only
       // prevents a non-teacher from ever reaching the edit UI.
-      meta: { breadcrumb: "Edit assignment", requiresCourseTeacher: true },
+      meta: { breadcrumb: "Edit homework assignment", requiresCourseTeacher: true },
       component: () => import("../views/homework/HomeworkAssignmentEdit.vue"),
     },
     {

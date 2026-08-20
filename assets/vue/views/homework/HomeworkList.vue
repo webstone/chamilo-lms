@@ -6,7 +6,7 @@
         v-if="isTeacher"
         icon="plus"
         type="primary"
-        :label="t('Create assignment')"
+        :label="t('Create homework assignment')"
         @click="goToCreate"
       />
     </div>
@@ -16,13 +16,35 @@
       :is-loading="isLoading"
       :total-items="totalItems"
       :values="assignments"
+      v-model:multi-sort-meta="sortFields"
+      v-model:rows="loadParams.itemsPerPage"
+      lazy
+      removable-sort
+      sort-mode="multiple"
+      @sort="onSort"
+      @page="onPage"
     >
       <Column
         :header="t('Title')"
+        :sortable="true"
         field="title"
       />
 
-      <Column :header="t('Deadline')">
+      <Column
+        :header="t('Opens on')"
+        :sortable="true"
+        field="opensOn"
+      >
+        <template #body="slotProps">
+          {{ formatDeadline(slotProps.data.opensOn) }}
+        </template>
+      </Column>
+
+      <Column
+        :header="t('Deadline')"
+        :sortable="true"
+        field="deadline"
+      >
         <template #body="slotProps">
           {{ formatDeadline(slotProps.data.deadline) }}
         </template>
@@ -93,7 +115,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from "vue"
+import { computed, reactive, ref, watch } from "vue"
 import { useI18n } from "vue-i18n"
 import { useRoute, useRouter } from "vue-router"
 import Column from "primevue/column"
@@ -142,6 +164,21 @@ const isTeacher = computed(
 const isLoading = ref(true)
 const assignments = ref([])
 const totalItems = ref(0)
+
+// Server-side pagination state (see loadAssignments()) - a course can have
+// far more than API Platform's default page size worth of assignments, so
+// the list must never be fetched/filtered as if it were complete without
+// paging through it. Mirrors HomeworkCorrectAndRate.vue's loadParams.
+const loadParams = reactive({
+  page: 1,
+  itemsPerPage: null,
+})
+
+// Default matches the new server-side default order (deadline DESC) - see
+// CHomeworkAssignment.php's ApiResource order attribute. PrimeVue's
+// multi-sort-meta convention: order -1 = desc, 1 = asc (mirrors
+// assets/vue/components/assignments/TeacherAssignmentList.vue).
+const sortFields = ref([{ field: "deadline", order: -1 }])
 
 // Keyed by numeric assignment id. Only ever populated for students - a
 // teacher has no "own" submission to look up, and CHomeworkSubmissionExtension
@@ -227,9 +264,19 @@ async function loadSubmittedCounts() {
   submittedCountByAssignmentId.value = Object.fromEntries(entries)
 }
 
-onMounted(async () => {
+async function loadAssignments() {
+  isLoading.value = true
   try {
-    const result = await homeworkAssignmentService.listAssignments()
+    const orderParams = {}
+    sortFields.value.forEach((sortItem) => {
+      orderParams[`order[${sortItem.field}]`] = -1 === sortItem.order ? "desc" : "asc"
+    })
+
+    const result = await homeworkAssignmentService.listAssignments({
+      page: loadParams.page,
+      itemsPerPage: loadParams.itemsPerPage,
+      ...orderParams,
+    })
     assignments.value = result.items || []
     totalItems.value = result.totalItems || 0
 
@@ -239,7 +286,31 @@ onMounted(async () => {
   } finally {
     isLoading.value = false
   }
-})
+}
+
+// BaseTable initializes `loadParams.itemsPerPage` itself (from platform
+// settings) once mounted, which is what actually triggers the first load
+// below - mirrors HomeworkCorrectAndRate.vue's lazy-loading pattern exactly,
+// so the list is always fetched page-by-page from the server rather than
+// once "in full".
+watch(
+  loadParams,
+  () => {
+    if (!loadParams.itemsPerPage) return
+    loadAssignments()
+  },
+  { deep: true, immediate: true },
+)
+
+function onSort(event) {
+  sortFields.value = event.multiSortMeta
+  loadAssignments()
+}
+
+function onPage(event) {
+  loadParams.page = event.page + 1
+  loadParams.itemsPerPage = event.rows
+}
 
 function mySubmission(assignment) {
   return mySubmissionByAssignmentId.value[getAssignmentId(assignment)] || null

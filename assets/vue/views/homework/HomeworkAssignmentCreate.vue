@@ -9,7 +9,7 @@
       @click="goBack"
     />
     <div class="field">
-      <h3 v-text="t('Create assignment')" />
+      <h3 v-text="t('Create homework assignment')" />
     </div>
 
     <HomeworkAssignmentForm
@@ -43,7 +43,7 @@ function onSubmit(assignment) {
   homeworkAssignmentService
     .createAssignment(assignment)
     .then(() => {
-      showSuccessNotification(t("Assignment created"))
+      showSuccessNotification(t("Homework assignment created"))
 
       goBack()
     })

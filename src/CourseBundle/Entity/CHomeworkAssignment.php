@@ -66,9 +66,9 @@ use Symfony\Component\Validator\Constraints as Assert;
     ],
     normalizationContext: ['groups' => ['homework_assignment:read']],
     denormalizationContext: ['groups' => ['homework_assignment:write']],
-    order: ['deadline' => 'ASC'],
+    order: ['deadline' => 'DESC'],
 )]
-#[ApiFilter(OrderFilter::class, properties: ['title', 'deadline' => ['nulls_comparison' => OrderFilterInterface::NULLS_SMALLEST]])]
+#[ApiFilter(OrderFilter::class, properties: ['title', 'opensOn', 'deadline' => ['nulls_comparison' => OrderFilterInterface::NULLS_SMALLEST]])]
 #[ApiFilter(filterClass: CidFilter::class)]
 // Deliberately NO SidFilter here - session-aware collection scoping (session
 // match OR whole-course, with a course-wide-teacher bypass) is hand-implemented

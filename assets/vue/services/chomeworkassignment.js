@@ -13,8 +13,8 @@ function buildCidParams() {
 }
 
 /** Lists homework assignments (collection endpoint), unwrapped to {totalItems, items, nextPageParams}. */
-async function listAssignments() {
-  return baseService.getCollection(`/api/c_homework_assignments`, buildCidParams())
+async function listAssignments(params = {}) {
+  return baseService.getCollection(`/api/c_homework_assignments`, { ...buildCidParams(), ...params })
 }
 
 /** Fetches a single homework assignment by id. */

@@ -9,7 +9,7 @@
       @click="goBack"
     />
     <div class="field">
-      <h3 v-text="t('Edit assignment')" />
+      <h3 v-text="t('Edit homework assignment')" />
     </div>
 
     <div
@@ -74,7 +74,7 @@ function onSubmit(payload) {
   homeworkAssignmentService
     .updateAssignment(assignmentId, payload)
     .then(() => {
-      showSuccessNotification(t("Assignment updated"))
+      showSuccessNotification(t("Homework assignment updated"))
 
       goBack()
     })

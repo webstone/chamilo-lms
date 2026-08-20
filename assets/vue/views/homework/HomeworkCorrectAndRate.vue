@@ -150,6 +150,7 @@
         </div>
 
         <BaseInputNumber
+          v-if="assignment.evaluationMode === HOMEWORK_ASSIGNMENT_EVALUATION_SCORE"
           id="homework-score"
           v-model="scoreInput"
           :label="t('Score')"
@@ -157,6 +158,7 @@
         />
 
         <BaseTextArea
+          v-if="assignment.evaluationMode !== HOMEWORK_ASSIGNMENT_EVALUATION_NONE"
           id="homework-feedback"
           v-model="feedbackInput"
           :label="t('Feedback')"
@@ -194,6 +196,8 @@ import BaseSelect from "../../components/basecomponents/BaseSelect.vue"
 import BaseInputNumber from "../../components/basecomponents/BaseInputNumber.vue"
 import BaseTextArea from "../../components/basecomponents/BaseTextArea.vue"
 import {
+  HOMEWORK_ASSIGNMENT_EVALUATION_NONE,
+  HOMEWORK_ASSIGNMENT_EVALUATION_SCORE,
   HOMEWORK_ASSIGNMENT_TYPE_FILE,
   HOMEWORK_ASSIGNMENT_TYPE_FORM,
 } from "../../constants/entity/chomeworkassignment"
