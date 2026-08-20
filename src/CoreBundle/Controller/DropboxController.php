@@ -56,6 +56,27 @@ class DropboxController extends AbstractController
         return \sprintf('%.1f %s', $bytes / (1024 ** $i), $units[$i]);
     }
 
+    /**
+     * c_dropbox_file.last_upload_date is NOT NULL with no column default, so a row
+     * inserted without an explicit value (legacy import, older code path) can end up
+     * with MySQL's zero-date "0000-00-00 00:00:00" - which DateTimeImmutable's
+     * constructor rejects outright, turning listFiles() into a fatal 500 for any
+     * course that happens to have such a row. Parse defensively instead of trusting
+     * the stored string is always a valid date.
+     */
+    private function safeDate(?string $value): DateTimeImmutable
+    {
+        if ($value) {
+            try {
+                return new DateTimeImmutable($value);
+            } catch (\Throwable) {
+                // Falls through to the "now" fallback below.
+            }
+        }
+
+        return new DateTimeImmutable();
+    }
+
     private function ago(DateTimeImmutable $dt): string
     {
         $diff = (new DateTimeImmutable())->getTimestamp() - $dt->getTimestamp();
@@ -197,7 +218,7 @@ class DropboxController extends AbstractController
             $files = $this->fileRepo->findSentByContextAndCategory($cid, $sid, $uid, $categoryId);
 
             $out = array_map(function (array $row) {
-                $dt = new DateTimeImmutable($row['lastUploadDate']);
+                $dt = $this->safeDate($row['lastUploadDate']);
 
                 return [
                     'id' => (int) $row['id'],
@@ -218,7 +239,7 @@ class DropboxController extends AbstractController
         $files = $this->fileRepo->findReceivedByContextAndCategory($cid, $sid, $uid, $categoryId);
 
         $out = array_map(function (array $row) {
-            $dt = new DateTimeImmutable($row['lastUploadDate']);
+            $dt = $this->safeDate($row['lastUploadDate']);
 
             return [
                 'id' => (int) $row['id'],

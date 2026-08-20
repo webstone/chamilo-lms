@@ -80,7 +80,7 @@ final class CDropboxFileRepository extends ResourceRepository
             f.description       AS description,
             f.filesize          AS filesize,
             f.last_upload_date  AS lastUploadDate,
-            f.cat_id            AS catId,
+            p.cat_id            AS catId,
             TRIM(CONCAT(u.firstname, ' ', u.lastname)) AS uploader
         FROM c_dropbox_person p
         INNER JOIN c_dropbox_file f
@@ -91,7 +91,7 @@ final class CDropboxFileRepository extends ResourceRepository
         WHERE p.c_id = :cid
           AND p.user_id = :uid
           AND f.session_id = :sid
-          AND f.cat_id = :categoryId
+          AND p.cat_id = :categoryId
         ORDER BY f.last_upload_date DESC, f.iid DESC
     SQL;
 

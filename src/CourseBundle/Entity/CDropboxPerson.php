@@ -31,6 +31,9 @@ class CDropboxPerson
     #[ORM\Column(name: 'user_id', type: 'integer')]
     protected int $userId;
 
+    #[ORM\Column(name: 'cat_id', type: 'integer')]
+    protected int $catId = 0;
+
     /**
      * Set cId.
      *
@@ -95,5 +98,17 @@ class CDropboxPerson
     public function getUserId()
     {
         return $this->userId;
+    }
+
+    public function getCatId(): int
+    {
+        return $this->catId;
+    }
+
+    public function setCatId(int $catId): self
+    {
+        $this->catId = $catId;
+
+        return $this;
     }
 }

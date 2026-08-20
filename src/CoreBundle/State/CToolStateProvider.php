@@ -83,6 +83,19 @@ final class CToolStateProvider implements ProviderInterface
 
         $allowVisibilityInSession = $this->settingsManager->getSetting('session.allow_edit_tool_visibility_in_session');
 
+        // "Hide tools from teachers" (course.course_hide_tools) - a platform-wide,
+        // per-tool-name checklist. Never wired into this modern (API Platform)
+        // course-tool listing; the only remaining consumer is a legacy, narrower
+        // gradebook-specific check in public/main/inc/lib/gradebook.lib.php that
+        // doesn't even read the same storage shape (it queries by `subkey`, but
+        // this setting is actually stored as one row with an empty subkey and a
+        // comma-separated `selected_value`). Admins are intentionally exempt -
+        // the setting's own title only says "from teachers".
+        $hiddenToolsForTeachers = (array) $this->settingsManager->getSetting('course.course_hide_tools');
+        $isTeacherRole = $user && !$user->isAdmin() && (
+            $user->hasRole('ROLE_CURRENT_COURSE_TEACHER') || $user->hasRole('ROLE_CURRENT_COURSE_SESSION_TEACHER')
+        );
+
         [$restrictToPositioning, $allowedToolName] = $this->shouldRestrictToPositioningOnly(
             $user,
             $course->getId(),
@@ -103,6 +116,10 @@ final class CToolStateProvider implements ProviderInterface
             $resolvedName = $resolved['name'];
 
             if ($restrictToPositioning && $allowedToolName && $resolvedName !== $allowedToolName) {
+                continue;
+            }
+
+            if ($isTeacherRole && \in_array($resolvedName, $hiddenToolsForTeachers, true)) {
                 continue;
             }
 

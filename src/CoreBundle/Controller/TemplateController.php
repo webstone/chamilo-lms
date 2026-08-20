@@ -15,7 +15,6 @@ use Chamilo\CoreBundle\Repository\Node\CourseRepository;
 use Chamilo\CoreBundle\Repository\SystemTemplateRepository;
 use Chamilo\CoreBundle\Repository\TemplatesRepository;
 use Chamilo\CoreBundle\Security\Authorization\Voter\CourseVoter;
-use Chamilo\CoreBundle\Settings\SettingsManager;
 use Chamilo\CourseBundle\Entity\CDocument;
 use Chamilo\CourseBundle\Repository\CDocumentRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -134,15 +133,14 @@ class TemplateController extends AbstractController
 
         $this->denyAccessUnlessGranted(CourseVoter::VIEW, $course);
 
-        $languageFilterEnabled = $this->isSettingEnabled(
-            $settingsManager->getSetting('language.template_activate_language_filter', true)
-        );
-
-        $systemTemplates = $languageFilterEnabled
-            ? $systemTemplateRepository->findForLanguageFilter(
-                $this->getTemplateLanguageCandidates($request->getLocale(), $course)
-            )
-            : $systemTemplateRepository->findAll();
+        // The by-language template filter (language.template_activate_language_filter)
+        // was never actually implemented - SystemTemplateRepository::findForLanguageFilter()
+        // and a locale-candidate helper it depended on don't exist, and this method wasn't
+        // even injecting the SettingsManager/Request it would need to check the setting or
+        // resolve the current locale. That made this endpoint fatal on every call ("New
+        // document" template listing), regardless of the setting's value. Always listing
+        // all system templates until the filter is properly built.
+        $systemTemplates = $systemTemplateRepository->findAll();
 
         $platformTemplates = $this->formatSystemTemplates($systemTemplates, $assetRepository);
 
