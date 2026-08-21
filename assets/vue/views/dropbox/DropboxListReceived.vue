@@ -230,6 +230,16 @@
               />
             </div>
           </template>
+          <template v-else>
+            <BaseButton
+              :label="t('Delete')"
+              icon="delete"
+              only-icon
+              size="small"
+              type="danger-text"
+              @click="removeCategory(data.catId)"
+            />
+          </template>
         </template>
       </Column>
     </BaseTable>
@@ -366,6 +376,16 @@ function selectAll() {
 }
 function clearAll() {
   selected.value = []
+}
+
+async function removeCategory(id) {
+  if (!id) return
+  if (!confirm(t("Delete this folder? All files inside will be permanently deleted."))) return
+  await service.deleteCategory({ id, area: "received" })
+  if (categoryId.value === id) {
+    categoryId.value = 0
+  }
+  await load()
 }
 
 async function remove(ids) {

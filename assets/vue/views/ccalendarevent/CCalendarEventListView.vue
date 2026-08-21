@@ -283,7 +283,7 @@ const filters = computed(() => {
     { key: "personal", label: t("Personal") },
     { key: "course", label: t("Course") },
     { key: "session", label: t("Session") },
-    { key: "assignment", label: t("Assignments") },
+    { key: "assignment", label: t("Student assignments") },
   ]
 })
 

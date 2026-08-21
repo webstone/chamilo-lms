@@ -20,7 +20,7 @@ class Assignment extends AbstractTool implements ToolInterface
 
     public function getTitleToShow(): string
     {
-        return 'Assignments';
+        return 'Student assignments';
     }
 
     public function getLink(): string

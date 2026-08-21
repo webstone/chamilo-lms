@@ -11,7 +11,7 @@ export default {
     {
       name: "AssignmentsList",
       path: "",
-      meta: { breadcrumb: "Assignments" },
+      meta: { breadcrumb: "Student assignments" },
       component: () => import("../views/assignments/AssignmentsList.vue"),
     },
     {

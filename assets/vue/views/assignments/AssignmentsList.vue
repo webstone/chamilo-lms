@@ -1,5 +1,5 @@
 <template>
-  <SectionHeader :title="t('Assignments')" />
+  <SectionHeader :title="t('Student assignments')" />
 
   <BaseToolbar>
     <template #start>
@@ -58,7 +58,7 @@
         <thead>
           <tr>
             <th class="px-6 py-3 text-gray-700 font-bold">{{ t("Learners") }}</th>
-            <th class="px-6 py-3 text-gray-700 font-bold text-center">{{ t("Assignments") }}</th>
+            <th class="px-6 py-3 text-gray-700 font-bold text-center">{{ t("Student assignments") }}</th>
           </tr>
         </thead>
         <tbody>
