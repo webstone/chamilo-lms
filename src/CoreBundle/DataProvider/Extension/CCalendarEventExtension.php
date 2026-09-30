@@ -16,6 +16,7 @@ use Chamilo\CoreBundle\Helpers\AccessUrlHelper;
 use Chamilo\CoreBundle\Helpers\CidReqHelper;
 use Chamilo\CoreBundle\Helpers\UserHelper;
 use Chamilo\CoreBundle\Repository\Node\CourseRepository;
+use Chamilo\CoreBundle\Repository\SessionRelCourseRelUserRepository;
 use Chamilo\CoreBundle\Repository\SessionRepository;
 use Chamilo\CoreBundle\Settings\SettingsManager;
 use Chamilo\CourseBundle\Entity\CCalendarEvent;
@@ -31,6 +32,7 @@ final class CCalendarEventExtension implements QueryCollectionExtensionInterface
         private readonly SettingsManager $settingsManager,
         private readonly CourseRepository $courseRepository,
         private readonly SessionRepository $sessionRepository,
+        private readonly SessionRelCourseRelUserRepository $sessionRelCourseRelUserRepository,
     ) {}
 
     public function applyToCollection(
@@ -169,14 +171,18 @@ final class CCalendarEventExtension implements QueryCollectionExtensionInterface
                 $sessionIdList[] = $session->getId();
             }
         } else {
-            $sessions = $this->sessionRepository->getSessionsByUser($user, $accessUrl)->getQuery()->getResult();
+            // Regular students and per-course session coaches are only ever
+            // linked via SessionRelCourseRelUser (see Session::addUserInCourse()).
+            // SessionRelUser (what sessionRepository->getSessionsByUser() used
+            // to be queried through here) is a separate relation, populated
+            // exclusively for General Coach / Session Admin roles - deriving
+            // the session list from it silently excluded everyone else,
+            // hiding their sessions' calendar events from their own Agenda.
+            $pairs = $this->sessionRelCourseRelUserRepository->getSessionCourseIdPairsByUser($user, $accessUrl);
 
-            foreach ($sessions as $session) {
-                foreach ($session->getSessionRelCourseByUser($user) as $sessionRelCourse) {
-                    $courseIdList[] = $sessionRelCourse->getCourse()->getId();
-                }
-
-                $sessionIdList[] = $session->getId();
+            foreach ($pairs as $pair) {
+                $sessionIdList[] = $pair['sessionId'];
+                $courseIdList[] = $pair['courseId'];
             }
         }
 

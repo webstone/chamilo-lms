@@ -9,7 +9,6 @@ namespace Chamilo\Tests\CoreBundle\Controller\Api;
 use Chamilo\CoreBundle\Entity\Course;
 use Chamilo\CoreBundle\Entity\CourseRelUser;
 use Chamilo\CoreBundle\Entity\Session;
-use Chamilo\CoreBundle\Entity\SessionRelUser;
 use Chamilo\Tests\AbstractApiTest;
 use Chamilo\Tests\ChamiloTestTrait;
 use DateTime;
@@ -200,17 +199,15 @@ final class GetCourseSessionEventsActionTest extends AbstractApiTest
 
         $sessionA = $this->createSessionWithDates('Cohort A', new DateTime('+10 days'), new DateTime('+40 days'));
         $sessionA->addCourse($course);
+        // Real-world enrollment mechanism: Session::addUserInCourse() writes
+        // to SessionRelCourseRelUser, not SessionRelUser (see
+        // GetCourseSessionEventsAction's fix - it used to check SessionRelUser,
+        // which is only ever populated for General Coach/Session Admin roles).
+        $sessionA->addUserInCourse(Session::STUDENT, $student, $course);
 
         $sessionB = $this->createSessionWithDates('Cohort B', new DateTime('+50 days'), new DateTime('+90 days'));
         $sessionB->addCourse($course);
 
-        // Student enrolled only in cohort A.
-        $sru = new SessionRelUser();
-        $sru->setSession($sessionA);
-        $sru->setUser($student);
-        $sru->setRelationType(Session::STUDENT);
-
-        $em->persist($sru);
         $em->flush();
 
         $token = $this->getUserTokenFromUser($student);
@@ -230,6 +227,45 @@ final class GetCourseSessionEventsActionTest extends AbstractApiTest
 
         self::assertTrue($bySessionTitle['Cohort A']['extendedProps']['isViewerEnrolled']);
         self::assertFalse($bySessionTitle['Cohort B']['extendedProps']['isViewerEnrolled']);
+    }
+
+    public function testIsViewerEnrolledIsTrueForGeneralCoachToo(): void
+    {
+        $em = $this->getEntityManager();
+
+        $coach = $this->createUser('coach_sess_a', 'coach_sess_a');
+        $course = $this->createCourse('Course with two sessions for coach');
+
+        $sessionA = $this->createSessionWithDates('Coach Cohort A', new DateTime('+10 days'), new DateTime('+40 days'));
+        $sessionA->addCourse($course);
+        // General Coach/Session Admin enrollment mechanism: Session::addGeneralCoach()
+        // writes to SessionRelUser, not SessionRelCourseRelUser. This is the other
+        // half of the union in GetCourseSessionEventsAction, added to fix the General
+        // Coach regression introduced by the SessionRelCourseRelUser-only fix.
+        $sessionA->addGeneralCoach($coach);
+
+        $sessionB = $this->createSessionWithDates('Coach Cohort B', new DateTime('+50 days'), new DateTime('+90 days'));
+        $sessionB->addCourse($course);
+
+        $em->flush();
+
+        $token = $this->getUserTokenFromUser($coach);
+        $client = $this->createClientWithCredentials($token);
+
+        $client->request(
+            'GET',
+            '/api/courses/'.$course->getId().'/session_events',
+            ['headers' => ['Accept' => 'application/json']]
+        );
+
+        $body = json_decode($client->getResponse()->getContent(), true);
+        $bySessionTitle = [];
+        foreach ($body as $e) {
+            $bySessionTitle[$e['extendedProps']['sessionTitle']] = $e;
+        }
+
+        self::assertTrue($bySessionTitle['Coach Cohort A']['extendedProps']['isViewerEnrolled']);
+        self::assertFalse($bySessionTitle['Coach Cohort B']['extendedProps']['isViewerEnrolled']);
     }
 
     public function testNonSubscribedNonAdminGetsForbidden(): void

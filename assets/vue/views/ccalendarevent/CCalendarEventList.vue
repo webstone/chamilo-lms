@@ -8,6 +8,17 @@
       @myStudentsScheduleClick="goToMyStudentsSchedule"
     />
 
+    <label
+      v-if="'personal' === currentContext"
+      class="flex items-center gap-2 text-sm"
+    >
+      <input
+        v-model="showPastSessions"
+        type="checkbox"
+      />
+      {{ t("Show past sessions") }}
+    </label>
+
     <FullCalendar
       ref="cal"
       :options="calendarOptions"
@@ -165,6 +176,7 @@ import CalendarSectionHeader from "../../components/ccalendarevent/CalendarSecti
 import { useCalendarActionButtons } from "../../composables/calendar/calendarActionButtons"
 import { useCalendarEvent } from "../../composables/calendar/calendarEvent"
 import { useCourseSessionEvents } from "../../composables/calendar/useCourseSessionEvents"
+import { useMySessionEvents } from "../../composables/calendar/useMySessionEvents"
 import resourceLinkService from "../../services/resourceLinkService"
 import { useSecurityStore } from "../../store/securityStore"
 import { useCourseSettings } from "../../store/courseSettingStore"
@@ -409,6 +421,24 @@ const { events: sessionEvents, refetch: refetchSessionEvents } = useCourseSessio
 )
 const isAdminViewer = computed(() => securityStore.isAdmin)
 
+// --- User-session virtual event source (personal/global Agenda only) ---
+const userIdForSessionEvents = computed(() => securityStore.user?.id ?? null)
+const { events: myEvents, refetch: refetchMyEvents } = useMySessionEvents(userIdForSessionEvents)
+const showPastSessions = ref(false)
+
+// Chooses which virtual-events source feeds the "session-virtual-events"
+// FullCalendar source below: the course-scoped one everywhere except the
+// personal agenda, where it's the viewer's own sessions across every
+// course they're in - filtered by the "show past sessions" toggle (default
+// off, this context is the only one with enough volume to need it).
+const activeSessionEvents = computed(() => {
+  if ("personal" !== currentContext.value) {
+    return sessionEvents.value
+  }
+
+  return showPastSessions.value ? myEvents.value : myEvents.value.filter((e) => !e.extendedProps?.isPast)
+})
+
 const popoverOpen = ref(false)
 const popoverPayload = ref(null)
 
@@ -419,6 +449,9 @@ function openSessionPopover(payload) {
 
 onMounted(() => {
   refetchSessionEvents()
+  if ("personal" === currentContext.value) {
+    refetchMyEvents()
+  }
 })
 
 // Session markers are now scoped server-side to the viewed session (sid), so a
@@ -432,9 +465,23 @@ watch(
   },
 )
 
-// When the session-events payload arrives or changes, force FullCalendar to
-// re-query its event sources so the virtual markers show up immediately.
-watch(sessionEvents, () => {
+// The user's own sessions don't depend on course/session navigation, but
+// do need a first fetch when landing in (or navigating into) the personal
+// context - e.g. clicking "Agenda" in the main menu after having browsed a
+// course's agenda in the same SPA session.
+watch(
+  () => currentContext.value,
+  (ctx) => {
+    if ("personal" === ctx) {
+      refetchMyEvents()
+    }
+  },
+)
+
+// When the active session-events payload arrives or changes - including a
+// toggle of showPastSessions, which recomputes activeSessionEvents without
+// a new network call - force FullCalendar to re-query its event sources.
+watch(activeSessionEvents, () => {
   cal.value?.getApi?.()?.refetchEvents?.()
 })
 
@@ -683,7 +730,7 @@ const calendarOptions = ref({
       id: "session-virtual-events",
       display: "block", // Force block-style rendering so isPast/upcoming background and white text actually render in dayGridMonth view. Without this, FullCalendar uses dot-style for timed events and ignores our inline backgroundColor/color.
       events(_info, successCallback) {
-        successCallback(sessionEvents.value || [])
+        successCallback(activeSessionEvents.value || [])
       },
     },
   ],

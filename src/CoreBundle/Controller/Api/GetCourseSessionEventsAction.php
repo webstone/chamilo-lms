@@ -8,6 +8,7 @@ namespace Chamilo\CoreBundle\Controller\Api;
 
 use Chamilo\CoreBundle\Entity\Course;
 use Chamilo\CoreBundle\Entity\Session;
+use Chamilo\CoreBundle\Entity\SessionRelCourseRelUser;
 use Chamilo\CoreBundle\Entity\SessionRelUser;
 use Chamilo\CoreBundle\Entity\User;
 use DateTime;
@@ -56,7 +57,18 @@ final class GetCourseSessionEventsAction
 
         $enrolledSessionIds = [];
         if ($viewer instanceof User && [] !== $sessions) {
-            $rows = $this->em->createQueryBuilder()
+            $courseEnrollmentRows = $this->em->createQueryBuilder()
+                ->select('IDENTITY(scu.session) AS sid')
+                ->from(SessionRelCourseRelUser::class, 'scu')
+                ->where('scu.user = :user')
+                ->andWhere('scu.session IN (:sessions)')
+                ->setParameter('user', $viewer)
+                ->setParameter('sessions', $sessions)
+                ->getQuery()
+                ->getArrayResult()
+            ;
+
+            $generalCoachRows = $this->em->createQueryBuilder()
                 ->select('IDENTITY(sru.session) AS sid')
                 ->from(SessionRelUser::class, 'sru')
                 ->where('sru.user = :user')
@@ -66,8 +78,17 @@ final class GetCourseSessionEventsAction
                 ->getQuery()
                 ->getArrayResult()
             ;
-            // IDENTITY() returns raw PDO string values; cast to int for strict in_array() below.
-            $enrolledSessionIds = array_map(static fn (array $r): int => (int) $r['sid'], $rows);
+
+            // A viewer counts as "enrolled" (gets the "mine" accent) whether
+            // they're a regular student/per-course session coach
+            // (SessionRelCourseRelUser) or a General Coach/Session Admin
+            // (SessionRelUser) - both are legitimate "I'm responsible for
+            // this session" relationships. IDENTITY() returns raw PDO
+            // string values; cast to int for strict in_array() below.
+            $enrolledSessionIds = array_values(array_unique(array_map(
+                static fn (array $r): int => (int) $r['sid'],
+                array_merge($courseEnrollmentRows, $generalCoachRows)
+            )));
         }
 
         $events = [];

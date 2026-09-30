@@ -24,6 +24,7 @@ use ApiPlatform\OpenApi\Model\Parameter;
 use ApiPlatform\OpenApi\Model\RequestBody;
 use ArrayObject;
 use Chamilo\CoreBundle\Controller\Api\CreateUserOnAccessUrlAction;
+use Chamilo\CoreBundle\Controller\Api\GetMySessionEventsAction;
 use Chamilo\CoreBundle\Controller\Api\RemoveUserIllustrationAction;
 use Chamilo\CoreBundle\Controller\Api\SetUserIllustrationAction;
 use Chamilo\CoreBundle\Controller\Api\UserSkillsController;
@@ -102,6 +103,16 @@ use UserManager;
             security: "is_granted('EDIT', object)",
             deserialize: false,
             output: false,
+        ),
+        new Get(
+            uriTemplate: '/users/{id}/session_events',
+            controller: GetMySessionEventsAction::class,
+            openapi: new Operation(
+                summary: 'List the sessions this user is enrolled in (across all their courses) as FullCalendar-compatible event objects',
+            ),
+            security: "is_granted('ROLE_ADMIN') or object == user",
+            read: true,
+            name: 'get_my_session_events',
         ),
         new GetCollection(
             uriTemplate: '/users/{id}/skills',
