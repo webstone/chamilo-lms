@@ -123,6 +123,10 @@ services:
         bind:
             $removeProcessor: '@api_platform.doctrine.orm.state.remove_processor'
 
+    Chamilo\CoreBundle\State\CourseRelUserDeleteProcessor:
+        bind:
+            $removeProcessor: '@api_platform.doctrine.orm.state.remove_processor'
+
     Chamilo\CoreBundle\State\CHomeworkSubmissionPostStateProcessor:
         bind:
             $persistProcessor: '@api_platform.doctrine.orm.state.persist_processor'

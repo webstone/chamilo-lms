@@ -11,12 +11,14 @@ use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use Chamilo\CoreBundle\Filter\PartialSearchOrFilter;
 use Chamilo\CoreBundle\Repository\CourseRelUserRepository;
 use Chamilo\CoreBundle\State\CourseRelUserCollectionStateProvider;
+use Chamilo\CoreBundle\State\CourseRelUserDeleteProcessor;
 use Chamilo\CoreBundle\State\CourseRelUserStateProcessor;
 use Chamilo\CoreBundle\State\UserCourseSubscriptionsStateProvider;
 use Chamilo\CoreBundle\Traits\UserTrait;
@@ -41,6 +43,10 @@ use Symfony\Component\Validator\Constraints as Assert;
             security: "is_granted('ROLE_USER')",
             securityPostDenormalize: "is_granted('ROLE_ADMIN') or object.getUser() == user",
             processor: CourseRelUserStateProcessor::class
+        ),
+        new Delete(
+            security: "is_granted('ROLE_ADMIN')",
+            processor: CourseRelUserDeleteProcessor::class
         ),
         new GetCollection(
             uriTemplate: '/me/courses.{_format}',
@@ -95,6 +101,7 @@ class CourseRelUser implements Stringable
     public const TEACHER = 1;
     public const STUDENT = 5;
 
+    #[Groups(['course_rel_user:read'])]
     #[ORM\Column(name: 'id', type: 'integer')]
     #[ORM\Id]
     #[ORM\GeneratedValue]

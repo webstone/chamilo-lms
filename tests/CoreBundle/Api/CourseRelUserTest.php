@@ -8,9 +8,14 @@ namespace Chamilo\Tests\CoreBundle\Api;
 
 use Chamilo\CoreBundle\Entity\Course;
 use Chamilo\CoreBundle\Entity\CourseRelUser;
+use Chamilo\CoreBundle\Entity\TrackEDefault;
 use Chamilo\CoreBundle\Entity\User;
 use Chamilo\CoreBundle\Repository\CourseRelUserRepository;
 use Chamilo\CoreBundle\Repository\Node\CourseRepository;
+use Chamilo\CourseBundle\Entity\CForumMailcue;
+use Chamilo\CourseBundle\Entity\CForumNotification;
+use Chamilo\CourseBundle\Entity\CGroupRelTutor;
+use Chamilo\CourseBundle\Entity\CGroupRelUser;
 use Chamilo\Tests\AbstractApiTest;
 use Chamilo\Tests\ChamiloTestTrait;
 
@@ -562,6 +567,37 @@ class CourseRelUserTest extends AbstractApiTest
         }
     }
 
+    public function testGetCollectionAsJsonIncludesRelationId(): void
+    {
+        $course = $this->createCourse('Json Collection Course');
+        $student = $this->createUser('student_json_collection');
+        $admin = $this->createAdminUser('json_collection');
+
+        $em = $this->getEntityManager();
+        $sub = (new CourseRelUser())
+            ->setCourse($course)
+            ->setUser($student)
+            ->setStatus(CourseRelUser::STUDENT)
+            ->setRelationType(0)
+        ;
+        $em->persist($sub);
+        $em->flush();
+
+        $tokenAdmin = $this->getUserTokenFromUser($admin);
+
+        $response = $this->createClientWithCredentials($tokenAdmin)->request(
+            'GET',
+            '/api/course_rel_users?user='.$student->getId().'&course='.$course->getId().'&status='.CourseRelUser::STUDENT,
+            ['headers' => ['Accept' => 'application/json']],
+        );
+
+        $this->assertResponseIsSuccessful();
+        $data = $response->toArray();
+
+        $this->assertCount(1, $data);
+        $this->assertSame($sub->getId(), $data[0]['id']);
+    }
+
     // -------------------------------------------------------------------------
     // CourseRelUserRepository helpers
     // -------------------------------------------------------------------------
@@ -587,5 +623,192 @@ class CourseRelUserTest extends AbstractApiTest
         $count = $repo->countTaughtCoursesForUser($teacher);
 
         $this->assertGreaterThanOrEqual(1, $count);
+    }
+
+    // -------------------------------------------------------------------------
+    // DELETE /api/course_rel_users/{id}
+    // -------------------------------------------------------------------------
+
+    private function subscribe(Course $course, User $user, int $status): CourseRelUser
+    {
+        $em = $this->getEntityManager();
+        $relation = (new CourseRelUser())
+            ->setCourse($course)
+            ->setUser($user)
+            ->setStatus($status)
+            ->setRelationType(0)
+        ;
+        $em->persist($relation);
+        $em->flush();
+
+        return $relation;
+    }
+
+    public function testDeleteStudentRelationAsAdminCleansUpCourseLeftovers(): void
+    {
+        $course = $this->createCourse('Delete Student Course');
+        $otherCourse = $this->createCourse('Delete Student Other Course');
+        $student = $this->createUser('student_delete');
+        $admin = $this->createAdminUser('delete_student');
+        $em = $this->getEntityManager();
+        $courseId = $course->getId();
+
+        $relation = $this->subscribe($course, $student, CourseRelUser::STUDENT);
+        $otherRelation = $this->subscribe($otherCourse, $student, CourseRelUser::STUDENT);
+
+        $group = $this->createGroup('Delete Student Group', $course);
+        $em->persist((new CGroupRelUser())->setStatus(1)->setUser($student)->setGroup($group)->setRole('')->setCId($courseId));
+        $em->persist((new CGroupRelTutor())->setUser($student)->setGroup($group)->setCId($courseId));
+        $em->persist((new CForumNotification())->setCId($courseId)->setUserId($student->getId())->setForumId(0)->setThreadId(0)->setPostId(0));
+        $em->persist((new CForumMailcue())->setCId($courseId)->setUserId($student->getId())->setThreadId(0)->setPostId(0));
+        // Proves the leftover cleanup is scoped by c_id, not just user_id.
+        $em->persist((new CForumNotification())->setCId($otherCourse->getId())->setUserId($student->getId())->setForumId(0)->setThreadId(0)->setPostId(0));
+        $em->flush();
+        $relationId = $relation->getId();
+        $studentId = $student->getId();
+
+        $this->createClientWithCredentials($this->getUserTokenFromUser($admin))->request(
+            'DELETE',
+            '/api/course_rel_users/'.$relationId,
+        );
+
+        $this->assertResponseStatusCodeSame(204);
+
+        $conn = $em->getConnection();
+        $count = fn (string $table) => (int) $conn->fetchOne(
+            "SELECT COUNT(*) FROM {$table} WHERE c_id = ? AND user_id = ?",
+            [$courseId, $studentId],
+        );
+        $this->assertSame(0, $count('course_rel_user'));
+        $this->assertSame(0, $count('c_group_rel_user'));
+        $this->assertSame(0, $count('c_group_rel_tutor'));
+        $this->assertSame(0, $count('c_forum_notification'));
+        $this->assertSame(0, $count('c_forum_mailcue'));
+
+        // The student's other course is untouched.
+        $this->assertSame(1, (int) $conn->fetchOne(
+            'SELECT COUNT(*) FROM course_rel_user WHERE id = ?',
+            [$otherRelation->getId()],
+        ));
+        $this->assertSame(1, (int) $conn->fetchOne(
+            'SELECT COUNT(*) FROM c_forum_notification WHERE c_id = ? AND user_id = ?',
+            [$otherCourse->getId(), $studentId],
+        ));
+
+        $adminId = $admin->getId();
+
+        $this->assertSame(1, (int) $conn->fetchOne(
+            "SELECT COUNT(*) FROM track_e_default WHERE default_event_type = 'user_unsubscribed' AND default_value_type = 'course_code' AND default_value = ? AND c_id = ? AND default_user_id = ? AND session_id = 0",
+            [$course->getCode(), $courseId, $adminId],
+        ));
+
+        $userObjectRow = $conn->fetchAssociative(
+            "SELECT default_value, default_user_id, session_id FROM track_e_default WHERE default_event_type = 'user_unsubscribed' AND default_value_type = 'user_object' AND c_id = ?",
+            [$courseId],
+        );
+        $this->assertIsArray($userObjectRow);
+        $this->assertSame($studentId, unserialize($userObjectRow['default_value'])['id']);
+        $this->assertSame($adminId, (int) $userObjectRow['default_user_id']);
+        $this->assertSame(0, (int) $userObjectRow['session_id']);
+    }
+
+    public function testDeleteTeacherRelationIsRefused(): void
+    {
+        $course = $this->createCourse('Delete Teacher Course');
+        $teacher = $this->createUser('teacher_delete');
+        $admin = $this->createAdminUser('delete_teacher');
+        $relation = $this->subscribe($course, $teacher, CourseRelUser::TEACHER);
+
+        $this->createClientWithCredentials($this->getUserTokenFromUser($admin))->request(
+            'DELETE',
+            '/api/course_rel_users/'.$relation->getId(),
+        );
+
+        $this->assertResponseStatusCodeSame(409);
+        $this->assertSame(1, (int) $this->getEntityManager()->getConnection()->fetchOne(
+            'SELECT COUNT(*) FROM course_rel_user WHERE id = ?',
+            [$relation->getId()],
+        ));
+    }
+
+    public function testDeleteStudentRelationKeepsTeacherRelationInSameCourse(): void
+    {
+        $course = $this->createCourse('Delete Mixed Course');
+        $user = $this->createUser('mixed_delete');
+        $admin = $this->createAdminUser('delete_mixed');
+        $courseId = $course->getId();
+        $userId = $user->getId();
+        $studentRelation = $this->subscribe($course, $user, CourseRelUser::STUDENT);
+        $teacherRelation = $this->subscribe($course, $user, CourseRelUser::TEACHER);
+
+        $em = $this->getEntityManager();
+        $group = $this->createGroup('Delete Mixed Group', $course);
+        $em->persist((new CGroupRelTutor())->setUser($user)->setGroup($group)->setCId($courseId));
+        $em->persist((new CForumNotification())->setCId($courseId)->setUserId($userId)->setForumId(0)->setThreadId(0)->setPostId(0));
+        $em->flush();
+
+        $this->createClientWithCredentials($this->getUserTokenFromUser($admin))->request(
+            'DELETE',
+            '/api/course_rel_users/'.$studentRelation->getId(),
+        );
+
+        $this->assertResponseStatusCodeSame(204);
+
+        $conn = $em->getConnection();
+        $this->assertSame(1, (int) $conn->fetchOne(
+            'SELECT COUNT(*) FROM course_rel_user WHERE id = ?',
+            [$teacherRelation->getId()],
+        ));
+        // The teacher role is kept, so its group tutorship and forum
+        // notification must not be swept away by the student unsubscribe.
+        $this->assertSame(1, (int) $conn->fetchOne(
+            'SELECT COUNT(*) FROM c_group_rel_tutor WHERE c_id = ? AND user_id = ?',
+            [$courseId, $userId],
+        ));
+        $this->assertSame(1, (int) $conn->fetchOne(
+            'SELECT COUNT(*) FROM c_forum_notification WHERE c_id = ? AND user_id = ?',
+            [$courseId, $userId],
+        ));
+    }
+
+    public function testDeleteStudentRrhhRelationIsRefused(): void
+    {
+        $course = $this->createCourse('Delete Student Rrhh Course');
+        $student = $this->createUser('student_delete_rrhh');
+        $admin = $this->createAdminUser('delete_rrhh');
+        $em = $this->getEntityManager();
+        $relation = (new CourseRelUser())
+            ->setCourse($course)
+            ->setUser($student)
+            ->setStatus(CourseRelUser::STUDENT)
+            ->setRelationType(1)
+        ;
+        $em->persist($relation);
+        $em->flush();
+
+        $this->createClientWithCredentials($this->getUserTokenFromUser($admin))->request(
+            'DELETE',
+            '/api/course_rel_users/'.$relation->getId(),
+        );
+
+        $this->assertResponseStatusCodeSame(409);
+        $this->assertSame(1, (int) $em->getConnection()->fetchOne(
+            'SELECT COUNT(*) FROM course_rel_user WHERE id = ?',
+            [$relation->getId()],
+        ));
+    }
+
+    public function testDeleteAsNonAdminIsForbidden(): void
+    {
+        $course = $this->createCourse('Delete Forbidden Course');
+        $student = $this->createUser('student_delete_self');
+        $relation = $this->subscribe($course, $student, CourseRelUser::STUDENT);
+
+        $this->createClientWithCredentials($this->getUserTokenFromUser($student))->request(
+            'DELETE',
+            '/api/course_rel_users/'.$relation->getId(),
+        );
+
+        $this->assertResponseStatusCodeSame(403);
     }
 }
