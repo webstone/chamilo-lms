@@ -69,7 +69,9 @@ use Throwable;
  *    touches these fields anyway) is never hard-rejected over this.
  *
  * IMPORTANT: when the resolver rejects a submit attempt
- * (CHomeworkSubmissionDeadlinePassedException), $data is a Doctrine-MANAGED
+ * (CHomeworkSubmissionDeadlinePassedException or, since 2026-09-11,
+ * CHomeworkSubmissionNotYetOpenException for the $opensOn check), $data is a
+ * Doctrine-MANAGED
  * entity (API Platform's provider already fetched it before this processor
  * runs), and by the time this code executes, the row has ALREADY been written
  * to the database with the client's rejected $status - confirmed via the
@@ -81,16 +83,16 @@ use Throwable;
  * $previousStatus back and flushes that correction, so a rejected request can
  * never leave a bad status persisted.
  *
- * The catch is intentionally scoped to CHomeworkSubmissionDeadlinePassedException
- * specifically, not a broad `catch (Throwable)`: this recovery path
- * (mutate + flush again) must never run for an UNEXPECTED failure (a
- * TypeError, a DB error unrelated to this logic, etc.) - doing so would risk
- * a second failure inside the catch masking the original one, and would
- * incorrectly apply "restore previous status" recovery semantics to an error
- * that has nothing to do with the deadline check. The recovery flush is
- * further isolated in its own try/catch so that if IT fails, the original
- * CHomeworkSubmissionDeadlinePassedException still propagates (logged, not
- * silently swallowed) rather than being replaced by the recovery failure.
+ * The catch is intentionally scoped to those two specific exception types,
+ * not a broad `catch (Throwable)`: this recovery path (mutate + flush again)
+ * must never run for an UNEXPECTED failure (a TypeError, a DB error
+ * unrelated to this logic, etc.) - doing so would risk a second failure
+ * inside the catch masking the original one, and would incorrectly apply
+ * "restore previous status" recovery semantics to an error that has nothing
+ * to do with the deadline/opensOn check. The recovery flush is further
+ * isolated in its own try/catch so that if IT fails, the original exception
+ * still propagates (logged, not silently swallowed) rather than being
+ * replaced by the recovery failure.
  *
  * @implements ProcessorInterface<CHomeworkSubmission, CHomeworkSubmission>
  */
@@ -116,7 +118,7 @@ final class CHomeworkSubmissionPutStateProcessor implements ProcessorInterface
 
         try {
             $resolvedStatus = $this->statusResolver->resolve($data, $data->getStatus(), $previousStatus);
-        } catch (CHomeworkSubmissionDeadlinePassedException $exception) {
+        } catch (CHomeworkSubmissionDeadlinePassedException | CHomeworkSubmissionNotYetOpenException $exception) {
             try {
                 $data->setStatus($previousStatus);
                 $this->entityManager->flush();

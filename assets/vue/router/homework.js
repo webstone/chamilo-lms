@@ -14,7 +14,12 @@ export default {
     {
       name: "HomeworkAssignmentCreate",
       path: "new",
-      meta: { breadcrumb: "Create" },
+      // Was the bare, generic "Create" key (unrelated Dutch translation
+      // "aanmaken", lowercase, no "verslag" context) - this already-existing,
+      // correctly-cased key ("Nieuw verslag") is what its sibling
+      // "Edit homework assignment" below already correctly uses the same
+      // "X homework assignment" naming pattern for.
+      meta: { breadcrumb: "Create homework assignment" },
       component: () => import("../views/homework/HomeworkAssignmentCreate.vue"),
     },
     {
@@ -46,6 +51,17 @@ export default {
       // this only prevents a non-teacher from ever seeing the grading UI.
       meta: { breadcrumb: "Review", requiresCourseTeacher: true },
       component: () => import("../views/homework/HomeworkCorrectAndRate.vue"),
+    },
+    {
+      name: "HomeworkGradeSubmission",
+      path: ":assignmentId(\\d+)/correct/:submissionId(\\d+)",
+      // Distinct from HomeworkCorrectAndRate's "Review" breadcrumb (the list
+      // of submissions) - this is the page for grading one specific
+      // submission. Was the bare "Grade" key, which had no translation entry
+      // at all (rendered literally as untranslated English "Grade" in an
+      // otherwise Dutch breadcrumb trail).
+      meta: { breadcrumb: "Grade homework submission", requiresCourseTeacher: true },
+      component: () => import("../views/homework/HomeworkGradeSubmission.vue"),
     },
     {
       name: "HomeworkFormBuilder",

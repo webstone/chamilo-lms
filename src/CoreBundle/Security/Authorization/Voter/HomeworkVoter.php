@@ -10,6 +10,7 @@ use Chamilo\CoreBundle\Entity\Course;
 use Chamilo\CoreBundle\Entity\User;
 use Chamilo\CoreBundle\Security\HomeworkCourseTeacherChecker;
 use Chamilo\CourseBundle\Entity\CHomeworkAssignment;
+use Chamilo\CourseBundle\Entity\CHomeworkAssignmentEvaluation;
 use Chamilo\CourseBundle\Entity\CHomeworkForm;
 use Chamilo\CourseBundle\Entity\CHomeworkSubmission;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
@@ -33,7 +34,7 @@ use Symfony\Component\Security\Core\Authorization\Voter\Voter;
  * exemption it would silently shadow this voter's cross-session grant with a
  * denial on the exact same call.
  *
- * @extends Voter<'VIEW'|'EDIT', CHomeworkAssignment|CHomeworkForm|CHomeworkSubmission>
+ * @extends Voter<'VIEW'|'EDIT', CHomeworkAssignment|CHomeworkForm|CHomeworkSubmission|CHomeworkAssignmentEvaluation>
  */
 final class HomeworkVoter extends Voter
 {
@@ -57,7 +58,8 @@ final class HomeworkVoter extends Voter
         return \in_array($attribute, [self::VIEW, self::EDIT], true)
             && ($subject instanceof CHomeworkAssignment
                 || $subject instanceof CHomeworkForm
-                || $subject instanceof CHomeworkSubmission);
+                || $subject instanceof CHomeworkSubmission
+                || $subject instanceof CHomeworkAssignmentEvaluation);
     }
 
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool
@@ -75,9 +77,9 @@ final class HomeworkVoter extends Voter
         return $this->checker->isTeacherOfCourse($user, $course);
     }
 
-    private function resolveCourse(CHomeworkAssignment|CHomeworkForm|CHomeworkSubmission $subject): ?Course
+    private function resolveCourse(CHomeworkAssignment|CHomeworkForm|CHomeworkSubmission|CHomeworkAssignmentEvaluation $subject): ?Course
     {
-        $resourceHolder = $subject instanceof CHomeworkSubmission
+        $resourceHolder = ($subject instanceof CHomeworkSubmission || $subject instanceof CHomeworkAssignmentEvaluation)
             ? $subject->getAssignment()
             : $subject;
 

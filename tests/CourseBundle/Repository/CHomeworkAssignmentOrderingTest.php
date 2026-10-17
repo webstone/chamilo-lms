@@ -39,6 +39,7 @@ final class CHomeworkAssignmentOrderingTest extends AbstractApiTest
             ->setSubmissionType(CHomeworkAssignment::TYPE_FILE)
             ->setDeadline(new DateTime('2026-08-01 23:59:00'))
             ->setEvaluationMode(CHomeworkAssignment::EVALUATION_NONE)
+            ->setCreator($teacher)
         ;
         $earlier->setParent($course);
         $earlier->addCourseLink($course);
@@ -48,6 +49,7 @@ final class CHomeworkAssignmentOrderingTest extends AbstractApiTest
             ->setSubmissionType(CHomeworkAssignment::TYPE_FILE)
             ->setDeadline(new DateTime('2026-09-01 23:59:00'))
             ->setEvaluationMode(CHomeworkAssignment::EVALUATION_NONE)
+            ->setCreator($teacher)
         ;
         $later->setParent($course);
         $later->addCourseLink($course);
@@ -88,6 +90,7 @@ final class CHomeworkAssignmentOrderingTest extends AbstractApiTest
             ->setOpensOn(new DateTime('2026-08-15 00:00:00'))
             ->setDeadline(new DateTime('2026-09-01 23:59:00'))
             ->setEvaluationMode(CHomeworkAssignment::EVALUATION_NONE)
+            ->setCreator($teacher)
         ;
         $opensLate->setParent($course);
         $opensLate->addCourseLink($course);
@@ -98,6 +101,7 @@ final class CHomeworkAssignmentOrderingTest extends AbstractApiTest
             ->setOpensOn(new DateTime('2026-08-01 00:00:00'))
             ->setDeadline(new DateTime('2026-09-01 23:59:00'))
             ->setEvaluationMode(CHomeworkAssignment::EVALUATION_NONE)
+            ->setCreator($teacher)
         ;
         $opensEarly->setParent($course);
         $opensEarly->addCourseLink($course);

@@ -11,6 +11,7 @@ use ApiPlatform\State\ProcessorInterface;
 use Chamilo\CoreBundle\Entity\User;
 use Chamilo\CourseBundle\Entity\CHomeworkSubmission;
 use DateTime;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Core\Exception\UnexpectedValueException;
 
@@ -48,6 +49,7 @@ final class CHomeworkSubmissionPostStateProcessor implements ProcessorInterface
         private readonly ProcessorInterface $persistProcessor,
         private readonly Security $security,
         private readonly CHomeworkSubmissionStatusResolver $statusResolver,
+        private readonly EntityManagerInterface $entityManager,
     ) {}
 
     public function process(
@@ -62,6 +64,7 @@ final class CHomeworkSubmissionPostStateProcessor implements ProcessorInterface
         }
 
         $data->setUser($user);
+        $this->assignNextSequenceNumber($data, $user);
 
         $resolvedStatus = $this->statusResolver->resolve($data, $data->getStatus(), CHomeworkSubmission::STATUS_DRAFT);
         $data->setStatus($resolvedStatus);
@@ -74,5 +77,49 @@ final class CHomeworkSubmissionPostStateProcessor implements ProcessorInterface
         }
 
         return $this->persistProcessor->process($data, $operation, $uriVariables, $context);
+    }
+
+    /**
+     * Owns CHomeworkSubmission::$sequenceNumber: always 1 for a plain
+     * (single-submission) assignment; server-assigned as "previous max + 1"
+     * for a multi-report one, guarded by a single-active-draft rule (a new
+     * report may only start once the previous one has been submitted). The
+     * unique constraint on (assignment_id, user_id, sequence_number) is a
+     * data-integrity backstop for a genuine double-click race, not the
+     * primary enforcement mechanism for this rule.
+     */
+    private function assignNextSequenceNumber(CHomeworkSubmission $data, User $user): void
+    {
+        $assignment = $data->getAssignment();
+
+        if (!$assignment->isAllowMultipleSubmissions()) {
+            $data->setSequenceNumber(1);
+
+            return;
+        }
+
+        $existing = $this->entityManager->getRepository(CHomeworkSubmission::class)
+            ->createQueryBuilder('s')
+            ->andWhere('s.assignment = :assignment')
+            ->andWhere('s.user = :user')
+            ->orderBy('s.sequenceNumber', 'DESC')
+            ->setMaxResults(1)
+            ->setParameter('assignment', $assignment)
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
+
+        if (null === $existing) {
+            $data->setSequenceNumber(1);
+
+            return;
+        }
+
+        if (CHomeworkSubmission::STATUS_DRAFT === $existing->getStatus()) {
+            throw new CHomeworkTooManyActiveDraftsException();
+        }
+
+        $data->setSequenceNumber($existing->getSequenceNumber() + 1);
     }
 }

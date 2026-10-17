@@ -26,19 +26,104 @@
       />
       <p class="text-gray-60">{{ t("Deadline") }}: {{ abbreviatedDatetime(assignment.deadline) }}</p>
 
-      <!-- Blocking state: deadline passed and late submissions are not allowed for this
-           assignment - no submission UI is shown at all, matching the spec's hard cutoff. -->
+      <!-- Blocking notice: deadline passed and late submissions are not
+           allowed for this assignment - submitting new work is genuinely no
+           longer possible, but this is an informational state (the final
+           evaluation right below may well be exactly why it's closed), not
+           an error - warning styling (matches the "deadline passed, late
+           still allowed" notice further down), not the red/danger style. -->
       <div
         v-if="isBlocked"
-        class="border-2 border-danger bg-support-6 text-danger rounded-lg p-3"
+        class="border-2 border-warning bg-support-6 rounded-lg p-3"
       >
         <p v-text="t('The deadline for this assignment has passed. Late submissions are not allowed.')" />
       </div>
 
-      <template v-else-if="submission">
+      <!-- Rendered independently of isBlocked above: a student who can no
+           longer submit new work must still be able to see their final
+           evaluation once the deadline makes it visible (isVisibleToStudent()
+           on the backend already gates this - an empty result here just
+           means "not visible yet" or "not graded yet", not an error). -->
+      <div
+        v-if="assignment.allowMultipleSubmissions && finalEvaluation"
+        class="border border-gray-25 bg-gray-15 rounded-lg p-3 space-y-2"
+      >
+        <p
+          class="font-semibold"
+          v-text="t('Final evaluation')"
+        />
+        <p v-if="assignment.evaluationMode === HOMEWORK_ASSIGNMENT_EVALUATION_SCORE && null !== finalEvaluation.score">
+          {{ t("Score") }}: <span class="font-bold">{{ finalEvaluation.score }}</span>
+        </p>
+        <div v-if="assignment.evaluationMode !== HOMEWORK_ASSIGNMENT_EVALUATION_NONE && finalEvaluation.feedback">
+          <p
+            class="font-medium"
+            v-text="t('Feedback')"
+          />
+          <div
+            class="text-gray-90"
+            v-html="finalEvaluation.feedback"
+          />
+        </div>
+      </div>
+
+      <template v-else>
+        <div
+          v-if="assignment.allowMultipleSubmissions"
+          class="border border-gray-30 rounded-lg p-3 space-y-2"
+        >
+          <p class="font-medium">
+            {{ t("{submitted}/{required} reports submitted", { submitted: submittedCount, required: assignment.requiredSubmissionCount }) }}
+            <span
+              v-if="lateCount > 0"
+              class="text-warning"
+            >
+              ({{ t("{count} late", { count: lateCount }) }})
+            </span>
+          </p>
+
+          <ul
+            v-if="submittedReports.length > 0"
+            class="space-y-1"
+          >
+            <li
+              v-for="report in submittedReports"
+              :key="report['@id']"
+              class="text-gray-90"
+            >
+              {{ t("Report {n}", { n: report.sequenceNumber }) }}<span v-if="report.label">: {{ report.label }}</span>
+              — {{ shortDate(report.submittedAt) }} {{ shortTime(report.submittedAt) }}
+              <span
+                v-if="report.status === HOMEWORK_SUBMISSION_STATUS_LATE"
+                class="text-warning"
+                v-text="t('(late)')"
+              />
+              <span v-if="report.score !== null && report.score !== undefined">
+                — {{ t("Score") }}: {{ report.score }}
+              </span>
+            </li>
+          </ul>
+
+          <BaseButton
+            v-if="!submission"
+            :label="t('Start new report')"
+            icon="plus"
+            type="black"
+            @click="startNewReport()"
+          />
+        </div>
+
+        <template v-if="submission">
+        <div
+          v-if="isBeforeOpensOn && isDraft"
+          class="border-2 border-primary bg-primary/10 text-primary rounded-lg p-3"
+        >
+          <p v-text="t('This report is not available yet. Available from {date}.', { date: abbreviatedDatetime(assignment.opensOn) })" />
+        </div>
+
         <div
           v-if="isPastDeadline && isDraft"
-          class="border-2 border-warning bg-support-5 rounded-lg p-3"
+          class="border-2 border-warning bg-support-6 rounded-lg p-3"
         >
           <p
             v-text="
@@ -54,13 +139,22 @@
           class="border-2 border-primary bg-primary/10 text-primary rounded-lg p-3 space-y-1"
         >
           <p v-text="submittedOnLabel" />
-          <p v-if="submission.score !== null && submission.score !== undefined">
+          <p
+            v-if="
+              assignment.evaluationMode === HOMEWORK_ASSIGNMENT_EVALUATION_SCORE &&
+              null !== submission.score &&
+              undefined !== submission.score
+            "
+          >
             {{ t("Score") }}: <span class="font-bold">{{ submission.score }}</span>
           </p>
-          <p v-if="submission.feedback">
-            {{ t("Feedback") }}:<br />
-            <span class="italic">{{ submission.feedback }}</span>
-          </p>
+          <div v-if="assignment.evaluationMode !== HOMEWORK_ASSIGNMENT_EVALUATION_NONE && submission.feedback">
+            {{ t("Feedback") }}:
+            <div
+              class="italic"
+              v-html="submission.feedback"
+            />
+          </div>
         </div>
 
         <!-- TYPE_FILE: single document upload for the whole submission. -->
@@ -242,6 +336,18 @@
         </div>
 
         <div
+          v-if="assignment.allowMultipleSubmissions && isDraft"
+          class="max-w-xs"
+        >
+          <BaseInputText
+            v-model="reportLabel"
+            :label="t('Report title')"
+            :placeholder="t('Optional')"
+            id="report-label"
+          />
+        </div>
+
+        <div
           v-if="isDraft"
           class="flex justify-end gap-2 mt-4"
         >
@@ -261,6 +367,7 @@
             @click="onSubmit"
           />
         </div>
+        </template>
       </template>
     </template>
   </div>
@@ -277,6 +384,7 @@ import { useSecurityStore } from "../../store/securityStore"
 import { RESOURCE_LINK_PUBLISHED } from "../../constants/entity/resourcelink"
 import homeworkAssignmentService from "../../services/chomeworkassignment"
 import homeworkSubmissionService from "../../services/chomeworksubmission"
+import homeworkAssignmentEvaluationService from "../../services/chomeworkassignmentevaluation"
 import homeworkFormService from "../../services/chomeworkform"
 import documentsService from "../../services/documents"
 import BaseButton from "../../components/basecomponents/BaseButton.vue"
@@ -288,6 +396,8 @@ import BaseSelect from "../../components/basecomponents/BaseSelect.vue"
 import BaseMultiSelect from "../../components/basecomponents/BaseMultiSelect.vue"
 import BaseFileUpload from "../../components/basecomponents/BaseFileUpload.vue"
 import {
+  HOMEWORK_ASSIGNMENT_EVALUATION_NONE,
+  HOMEWORK_ASSIGNMENT_EVALUATION_SCORE,
   HOMEWORK_ASSIGNMENT_TYPE_FILE,
   HOMEWORK_ASSIGNMENT_TYPE_FORM,
 } from "../../constants/entity/chomeworkassignment"
@@ -335,8 +445,20 @@ const isSubmitting = ref(false)
 const isUploadingDocument = ref(false)
 
 const assignment = ref(null)
+// The report currently being edited (a draft) - unchanged meaning from before
+// multi-report support: null means "no active draft right now" (only
+// possible in multi-report mode, between reports).
 const submission = ref(null)
 const form = ref(null)
+
+// All of this student's reports for this assignment, sorted by
+// sequenceNumber (multi-report assignments only - always empty otherwise).
+const myReports = ref([])
+const reportLabel = ref("")
+
+// This student's own CHomeworkAssignmentEvaluation for this assignment, null
+// until the backend actually makes it visible (see loadFinalEvaluation()).
+const finalEvaluation = ref(null)
 
 // fieldIri -> { value: string, fileDocument: string|null }. Populated from the
 // loaded submission's answers and mutated as the student edits the form.
@@ -369,6 +491,14 @@ watch(
 
 const isPastDeadline = computed(() => !!assignment.value && new Date() > new Date(assignment.value.deadline))
 const isBlocked = computed(() => isPastDeadline.value && assignment.value && !assignment.value.allowLateSubmission)
+// Unlike isBlocked (deadline passed), this does NOT hide the whole page -
+// a draft may still be created/edited before opensOn (matches the backend:
+// CHomeworkSubmissionStatusResolver only gates the actual submit
+// transition). Only the Submit button is disabled, with an info banner
+// instead of the red "blocked" one.
+const isBeforeOpensOn = computed(
+  () => !!assignment.value?.opensOn && new Date() < new Date(assignment.value.opensOn),
+)
 const isDraft = computed(() => submission.value?.status === HOMEWORK_SUBMISSION_STATUS_DRAFT)
 
 const statusLabel = computed(() => {
@@ -399,6 +529,12 @@ const submittedOnLabel = computed(() => {
   return t("Submitted on {date} at {time}", { date, time })
 })
 
+const submittedReports = computed(() => myReports.value.filter((r) => r.status !== HOMEWORK_SUBMISSION_STATUS_DRAFT))
+const submittedCount = computed(() => submittedReports.value.length)
+const lateCount = computed(
+  () => submittedReports.value.filter((r) => r.status === HOMEWORK_SUBMISSION_STATUS_LATE).length,
+)
+
 const pages = computed(() => form.value?.pages || [])
 const currentPage = computed(() => pages.value[currentPageIndex.value] || null)
 const allFields = computed(() => pages.value.flatMap((page) => page.fields || []))
@@ -422,7 +558,7 @@ const allRequiredFieldsFilled = computed(() =>
 )
 
 const canSubmit = computed(() => {
-  if (!submission.value || !isDraft.value) return false
+  if (!submission.value || !isDraft.value || isBeforeOpensOn.value) return false
   if (assignment.value?.submissionType === HOMEWORK_ASSIGNMENT_TYPE_FILE) {
     return !!documentIri.value
   }
@@ -433,8 +569,18 @@ onMounted(async () => {
   try {
     assignment.value = await homeworkAssignmentService.getAssignment(assignmentId)
 
+    // Deliberately outside the isBlocked guard below - see the template's
+    // own comment on the final-evaluation block.
+    if (assignment.value.allowMultipleSubmissions) {
+      await loadFinalEvaluation()
+    }
+
     if (!isBlocked.value) {
-      await loadOrCreateSubmission()
+      if (assignment.value.allowMultipleSubmissions) {
+        await loadMyReports()
+      } else {
+        await loadOrCreateSubmission()
+      }
 
       if (assignment.value.submissionType === HOMEWORK_ASSIGNMENT_TYPE_FORM) {
         await loadForm()
@@ -495,6 +641,76 @@ async function loadOrCreateSubmission() {
 
   submission.value = mine
   populateLocalStateFromSubmission(mine)
+}
+
+// GetCollection's own row-level scoping (CHomeworkAssignmentEvaluationExtension)
+// already restricts this to the current student's own evaluation AND only
+// once the assignment's deadline has passed - an empty result here is the
+// normal "not visible yet" case, not an error, so finalEvaluation simply
+// stays null rather than needing a separate "not visible" state.
+async function loadFinalEvaluation() {
+  const { items } = await homeworkAssignmentEvaluationService.listEvaluationsForAssignment(assignmentId)
+  finalEvaluation.value = items[0] || null
+}
+
+// Multi-report counterpart of loadOrCreateSubmission(): loads ALL of the
+// student's reports (for the progress header/list), and sets `submission`
+// to whichever one is still a draft, if any - null when every report so far
+// has been submitted (the student must click "Start new report" to get a
+// new active draft, except on a true first visit with zero reports, where
+// one is created automatically to match the single-report UX of "always
+// have a draft ready").
+async function loadMyReports() {
+  const { items } = await homeworkSubmissionService.listSubmissionsForAssignment(assignmentId)
+  const myIri = securityStore.user?.["@id"]
+  myReports.value = items
+    .filter((item) => item.user === myIri)
+    .sort((a, b) => a.sequenceNumber - b.sequenceNumber)
+
+  const draft = myReports.value.find((item) => item.status === HOMEWORK_SUBMISSION_STATUS_DRAFT)
+  if (draft) {
+    submission.value = draft
+    populateLocalStateFromSubmission(draft)
+    reportLabel.value = draft.label || ""
+  } else if (0 === myReports.value.length) {
+    await startNewReport()
+  } else {
+    submission.value = null
+  }
+}
+
+async function startNewReport(label = null) {
+  try {
+    const { cid, sid } = getCourseContext()
+    const created = await homeworkSubmissionService.createSubmission({
+      assignment: assignment.value["@id"],
+      ...(label ? { label } : {}),
+      // See loadOrCreateSubmission() above for why this exact
+      // parentResourceNodeId/resourceLinkList shape (user-scoped `uid` link)
+      // is required.
+      parentResourceNodeId: nodeId,
+      resourceLinkList: [
+        {
+          cid,
+          ...(sid ? { sid } : {}),
+          visibility: RESOURCE_LINK_PUBLISHED,
+          uid: securityStore.user?.id,
+        },
+      ],
+    })
+
+    myReports.value.push(created)
+    submission.value = created
+    populateLocalStateFromSubmission(created)
+    reportLabel.value = created.label || ""
+    startAutosave()
+  } catch (error) {
+    // The most common rejection here is a 422 from
+    // CHomeworkTooManyActiveDraftsException (the previous report is still a
+    // draft) - surfaced the same way every other failed request in this
+    // component already is.
+    showErrorNotification(error)
+  }
 }
 
 function populateLocalStateFromSubmission(sub) {
@@ -674,11 +890,18 @@ function buildAnswersPayload() {
 }
 
 function buildSavePayload() {
-  if (assignment.value?.submissionType === HOMEWORK_ASSIGNMENT_TYPE_FILE) {
-    return documentIri.value ? { document: documentIri.value } : {}
+  const payload =
+    assignment.value?.submissionType === HOMEWORK_ASSIGNMENT_TYPE_FILE
+      ? documentIri.value
+        ? { document: documentIri.value }
+        : {}
+      : { answers: buildAnswersPayload() }
+
+  if (assignment.value?.allowMultipleSubmissions) {
+    payload.label = reportLabel.value || null
   }
 
-  return { answers: buildAnswersPayload() }
+  return payload
 }
 
 async function saveDraftNow() {
@@ -747,6 +970,19 @@ async function onSubmit() {
     populateLocalStateFromSubmission(result)
     stopAutosave()
     showSuccessNotification(t("Submission sent"))
+
+    if (assignment.value?.allowMultipleSubmissions) {
+      const idx = myReports.value.findIndex((r) => r["@id"] === result["@id"])
+      if (idx >= 0) {
+        myReports.value[idx] = result
+      } else {
+        myReports.value.push(result)
+      }
+      // No active draft until the student clicks "Start new report" -
+      // matches loadMyReports()'s own "null when nothing is a draft" rule.
+      submission.value = null
+      reportLabel.value = ""
+    }
   } catch (error) {
     showErrorNotification(error)
   } finally {

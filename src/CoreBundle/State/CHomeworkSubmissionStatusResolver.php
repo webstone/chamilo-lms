@@ -52,12 +52,23 @@ use Symfony\Bundle\SecurityBundle\Security;
  *    corrections (e.g. reopening a submission, overriding LATE back to
  *    SUBMITTED).
  *
- * The 422 thrown by #1 (CHomeworkSubmissionDeadlinePassedException) is a
- * plain {"error": "..."} message, not the `violations` array shape
- * ApiPlatform's Assert-based validation uses elsewhere in this codebase -
- * deliberate: this is a business-rule rejection computed from real time vs.
- * the assignment's deadline, not a per-property constraint on the submitted
- * payload, so there's no single property path to attach a violation to.
+ * The same check #1 also enforces CHomeworkAssignment::$opensOn (added
+ * 2026-09-11): a submit attempt before that date throws
+ * CHomeworkSubmissionNotYetOpenException, checked before the deadline so an
+ * assignment that somehow has opensOn after its own deadline rejects with
+ * the more relevant "not yet open" reason. Unlike the deadline side, there
+ * is no "allow early" opt-out flag - the teacher picked the date, so there's
+ * nothing to bypass it with. A draft may still be created/edited before
+ * opensOn, same as after the deadline - only the actual submit transition
+ * is gated.
+ *
+ * The 422 thrown by #1 (CHomeworkSubmissionDeadlinePassedException /
+ * CHomeworkSubmissionNotYetOpenException) is a plain {"error": "..."}
+ * message, not the `violations` array shape ApiPlatform's Assert-based
+ * validation uses elsewhere in this codebase - deliberate: this is a
+ * business-rule rejection computed from real time vs. the assignment's
+ * deadline/opensOn, not a per-property constraint on the submitted payload,
+ * so there's no single property path to attach a violation to.
  */
 final class CHomeworkSubmissionStatusResolver
 {
@@ -92,7 +103,20 @@ final class CHomeworkSubmissionStatusResolver
     private function resolveSubmitAttempt(CHomeworkSubmission $submission): int
     {
         $assignment = $submission->getAssignment();
-        $isPastDeadline = new DateTime() > $assignment->getDeadline();
+        $now = new DateTime();
+
+        // "opensOn" only ever blocks the actual submit transition, exactly
+        // like the deadline check below - a draft may still be created and
+        // edited before this date (mirrors how a draft may still be edited
+        // after the deadline too, just never submitted). No allow-late-style
+        // opt-out exists for this side: the teacher picks the date, so
+        // there's no equivalent "allow early" flag to bypass it with.
+        $opensOn = $assignment->getOpensOn();
+        if (null !== $opensOn && $now < $opensOn) {
+            throw new CHomeworkSubmissionNotYetOpenException();
+        }
+
+        $isPastDeadline = $now > $assignment->getDeadline();
 
         if ($isPastDeadline && !$assignment->isAllowLateSubmission()) {
             throw new CHomeworkSubmissionDeadlinePassedException();

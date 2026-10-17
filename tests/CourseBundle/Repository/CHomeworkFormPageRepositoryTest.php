@@ -28,7 +28,7 @@ class CHomeworkFormPageRepositoryTest extends AbstractApiTest
 
         $course = $this->createCourse('new');
 
-        $form = (new CHomeworkForm())->setTitle('Lesverslag');
+        $form = (new CHomeworkForm())->setTitle('Lesverslag')->setCreator($this->getUser('admin'));
         $form->setParent($course);
         $form->addCourseLink($course);
 

@@ -22,23 +22,32 @@ function buildCidParams() {
  * mirroring the "publication.iid" filter CStudentPublicationComment uses for
  * the analogous relation in cstudentpublication.js's loadComments().
  *
- * `page`/`itemsPerPage`/`status` are optional and all server-side: without
- * them, API Platform's default collection page size (30) silently truncates
- * the result, which HomeworkCorrectAndRate.vue's teacher-facing submission
- * list must not do for a course with more than 30 submissions - see that
- * component for the real (paginated) caller. HomeworkSubmit.vue's own
- * find-or-create-my-draft call deliberately omits these (a student's own
- * filtered collection is always 0-1 items, so default pagination is a no-op
- * there).
+ * `page`/`itemsPerPage`/`status`/`sortOrder`/`user` are optional and all
+ * server-side: without `page`/`itemsPerPage`, API Platform's default
+ * collection page size (30) silently truncates the result, which
+ * HomeworkCorrectAndRate.vue's teacher-facing submission list must not do for
+ * a course with more than 30 submissions - see that component for the real
+ * (paginated) caller. `sortOrder` becomes an `order[submittedAt]` param;
+ * `user` (the "user" SearchFilter) narrows the list down to one student's
+ * submissions. HomeworkSubmit.vue's own find-or-create-my-draft call
+ * deliberately omits these (a student's own filtered collection is always
+ * 0-1 items, so default pagination is a no-op there).
  */
-async function listSubmissionsForAssignment(assignmentId, { page, itemsPerPage, status } = {}) {
+async function listSubmissionsForAssignment(assignmentId, { page, itemsPerPage, status, sortOrder, user } = {}) {
   return baseService.getCollection(`/api/c_homework_submissions`, {
     ...buildCidParams(),
     "assignment.iid": assignmentId,
     ...(page ? { page } : {}),
     ...(itemsPerPage ? { itemsPerPage } : {}),
     ...(status !== undefined && status !== null && "" !== status ? { status } : {}),
+    ...(sortOrder ? { "order[submittedAt]": sortOrder } : {}),
+    ...(user ? { user } : {}),
   })
+}
+
+/** Fetches a single homework submission by id. */
+async function getSubmission(id) {
+  return baseService.get(`/api/c_homework_submissions/${id}`, buildCidParams())
 }
 
 /**
@@ -73,6 +82,7 @@ async function grade(id, score, feedback) {
 export default {
   ...makeService("c_homework_submissions"),
   listSubmissionsForAssignment,
+  getSubmission,
   createSubmission,
   saveDraft,
   submit,

@@ -25,6 +25,7 @@ final class CHomeworkAssignmentRepositoryTest extends AbstractApiTest
             ->setSubmissionType(CHomeworkAssignment::TYPE_FORM)
             ->setDeadline(new DateTime('2026-08-01 23:59:00'))
             ->setEvaluationMode(CHomeworkAssignment::EVALUATION_STATUS_ONLY)
+            ->setCreator($this->getUser('admin'))
         ;
         $assignment->setParent($course);
         $assignment->addCourseLink($course);
@@ -63,6 +64,7 @@ final class CHomeworkAssignmentRepositoryTest extends AbstractApiTest
             ->setDeadline(new DateTime('2026-08-01 23:59:00'))
             ->setEvaluationMode(CHomeworkAssignment::EVALUATION_STATUS_ONLY)
             ->setForm($form)
+            ->setCreator($teacher)
         ;
         $assignment->setParent($course);
         $assignment->addCourseLink($course);

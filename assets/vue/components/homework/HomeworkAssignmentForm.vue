@@ -1,169 +1,225 @@
 <template>
   <form @submit.prevent="onSubmit">
-    <BaseInputText
-      v-model="v$.title.$model"
-      :error-text="v$.title.$errors.map((e) => e.$message).join('<br>')"
-      :form-submitted="formSubmitted"
-      :is-invalid="v$.title.$error"
-      :label="t('Title')"
-      id="title"
-    />
+    <Fieldset :legend="t('Content')">
+      <BaseInputText
+        v-model="v$.title.$model"
+        :error-text="v$.title.$errors.map((e) => e.$message).join('<br>')"
+        :form-submitted="formSubmitted"
+        :is-invalid="v$.title.$error"
+        :label="t('Title')"
+        id="title"
+      />
 
-    <BaseTinyEditor
-      v-model="assignment.description"
-      :label="t('Description')"
-      editor-id=""
-    />
+      <BaseTinyEditor
+        v-model="assignment.description"
+        :label="t('Description')"
+        editor-id=""
+      />
 
-    <div class="field flex items-start gap-4">
-      <div class="shrink-0">
-        <BaseRadioButtons
-          v-model="assignment.submissionType"
-          :options="submissionTypeOptions"
-          :title="t('Submission type')"
-          name="submission_type"
+      <div class="field flex items-start gap-4">
+        <div class="shrink-0">
+          <BaseRadioButtons
+            v-model="assignment.submissionType"
+            :options="submissionTypeOptions"
+            :title="t('Submission type')"
+            name="submission_type"
+          />
+        </div>
+
+        <!-- mt-8 offsets past BaseRadioButtons' own title label (line height +
+             mb-2) so this column's content starts level with the actual radio
+             buttons, not with the "Submission type" title above them. -->
+        <div class="flex-1 mt-8">
+          <div v-if="assignment.submissionType === HOMEWORK_ASSIGNMENT_TYPE_FILE">
+            <div class="flex items-center gap-2">
+              <BaseFileUpload
+                :label="t('Attach a template document')"
+                input-id="homework-template-document"
+                input-name="homework-template-document"
+                @file-selected="onTemplateFileSelected"
+              />
+              <span
+                v-if="isUploadingTemplate"
+                class="text-gray-500"
+                v-text="t('Uploading...')"
+              />
+              <span
+                v-else-if="templateDocumentName"
+                class="text-gray-90"
+                v-text="templateDocumentName"
+              />
+              <span
+                v-else-if="assignment.templateDocument"
+                class="text-gray-90"
+                v-text="t('A template document is already attached. Upload a new file to replace it.')"
+              />
+            </div>
+          </div>
+
+          <div v-else>
+            <!-- items-start, not items-center: the left column (select +
+                 creator caption) is taller than the button group, so
+                 items-center centers the buttons against that whole block
+                 instead of against the select box itself. -->
+            <div class="flex items-start gap-2">
+              <div class="flex-1">
+                <BaseSelect
+                  v-model="assignment.form"
+                  :is-loading="isFormsLoading"
+                  :label="t('Form')"
+                  :options="forms"
+                  allow-clear
+                  id="homework-form-id"
+                  name="form"
+                  option-label="title"
+                  option-value="@id"
+                />
+                <!-- pl-3 matches the floating label's own left inset once it
+                     sits on the border (left-2 + px-1, see
+                     assets/css/scss/atoms/_float_label.scss), so this caption
+                     starts directly below that label's text, not the select
+                     box's edge. text-caption matches that same label's font
+                     size for the same reason. -->
+                <p
+                  v-if="selectedFormMeta?.creatorFullName"
+                  class="text-gray-60 text-caption pl-3 mt-1"
+                  v-text="
+                    t('Created by {0} on {1}', [
+                      selectedFormMeta.creatorFullName,
+                      abbreviatedDatetime(selectedFormMeta.createdAt),
+                    ])
+                  "
+                />
+              </div>
+
+              <div class="flex gap-2">
+                <BaseButton
+                  :label="t('Create new form')"
+                  icon="plus"
+                  type="black"
+                  @click="goToFormBuilder"
+                />
+
+                <template v-if="selectedFormId">
+                  <BaseButton
+                    :is-loading="isDuplicatingForm"
+                    :label="t('Form actions')"
+                    icon="dots-vertical"
+                    only-icon
+                    popup-identifier="homework-form-actions-menu"
+                    type="black"
+                    @click="formActionsMenu.toggle($event)"
+                  />
+                  <BaseMenu
+                    id="homework-form-actions-menu"
+                    ref="formActionsMenu"
+                    :model="formActionItems"
+                  />
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Fieldset>
+
+    <Fieldset :legend="t('Planning')" class="mt-4">
+      <!-- max-w-xs constrains only the date pickers (and thus their popups) -
+           the rest of the form stays full width. mb-5 here reproduces .field's
+           own mb-5 spacing (assets/css/scss/atoms/_form.scss), which is lost
+           because BaseCalendar's inner .field becomes this wrapper's only
+           child and matches .field's own "last:mb-0" rule. -->
+      <div class="max-w-xs mb-5">
+        <BaseCalendar
+          v-model="assignment.opensOn"
+          :error-text="v$.opensOn.$errors.map((e) => e.$message).join('<br>')"
+          :is-invalid="v$.opensOn.$error"
+          :label="t('Opens on')"
+          :placeholder="' '"
+          id="opens-on"
+          show-time
         />
       </div>
 
-      <!-- mt-8 offsets past BaseRadioButtons' own title label (line height +
-           mb-2) so this column's content starts level with the actual radio
-           buttons, not with the "Submission type" title above them. -->
-      <div class="flex-1 mt-8">
-        <div v-if="assignment.submissionType === HOMEWORK_ASSIGNMENT_TYPE_FILE">
-          <div class="flex items-center gap-2">
-            <BaseFileUpload
-              :label="t('Attach a template document')"
-              input-id="homework-template-document"
-              input-name="homework-template-document"
-              @file-selected="onTemplateFileSelected"
-            />
-            <span
-              v-if="isUploadingTemplate"
-              class="text-gray-500"
-              v-text="t('Uploading...')"
-            />
-            <span
-              v-else-if="templateDocumentName"
-              class="text-gray-90"
-              v-text="templateDocumentName"
-            />
-            <span
-              v-else-if="assignment.templateDocument"
-              class="text-gray-90"
-              v-text="t('A template document is already attached. Upload a new file to replace it.')"
-            />
-          </div>
-        </div>
-
-        <div v-else>
-          <div class="flex items-center gap-2">
-            <div class="flex-1">
-              <BaseSelect
-                v-model="assignment.form"
-                :is-loading="isFormsLoading"
-                :label="t('Form')"
-                :options="forms"
-                allow-clear
-                id="homework-form-id"
-                name="form"
-                option-label="title"
-                option-value="@id"
-              />
-            </div>
-
-            <BaseButton
-              v-if="selectedFormId"
-              :label="t('Edit form')"
-              icon="edit"
-              type="black"
-              @click="goToEditForm"
-            />
-            <BaseButton
-              :label="t('Create new form')"
-              icon="plus"
-              type="black"
-              @click="goToFormBuilder"
-            />
-          </div>
-        </div>
+      <div class="max-w-xs mb-5">
+        <BaseCalendar
+          v-model="assignment.deadline"
+          :error-text="v$.deadline.$errors.map((e) => e.$message).join('<br>')"
+          :is-invalid="v$.deadline.$error"
+          :label="t('Deadline')"
+          :placeholder="' '"
+          id="deadline"
+          show-time
+        />
       </div>
-    </div>
 
-    <!-- max-w-xs constrains only the date pickers (and thus their popups) -
-         the rest of the form stays full width. mb-5 here reproduces .field's
-         own mb-5 spacing (assets/css/scss/atoms/_form.scss), which is lost
-         because BaseCalendar's inner .field becomes this wrapper's only
-         child and matches .field's own "last:mb-0" rule. -->
-    <div class="max-w-xs mb-5">
-      <BaseCalendar
-        v-model="assignment.opensOn"
-        :error-text="v$.opensOn.$errors.map((e) => e.$message).join('<br>')"
-        :is-invalid="v$.opensOn.$error"
-        :label="t('Opens on')"
-        :placeholder="' '"
-        id="opens-on"
-        show-time
+      <BaseCheckbox
+        id="allow-late-submission"
+        v-model="assignment.allowLateSubmission"
+        :label="t('Allow late submission')"
+        name="allow_late_submission"
       />
-    </div>
 
-    <div class="max-w-xs mb-5">
-      <BaseCalendar
-        v-model="assignment.deadline"
-        :error-text="v$.deadline.$errors.map((e) => e.$message).join('<br>')"
-        :is-invalid="v$.deadline.$error"
-        :label="t('Deadline')"
-        :placeholder="' '"
-        id="deadline"
-        show-time
+      <BaseCheckbox
+        id="allow-multiple-submissions"
+        v-model="assignment.allowMultipleSubmissions"
+        :label="t('Allow multiple submissions')"
+        name="allow_multiple_submissions"
       />
-    </div>
 
-    <BaseCheckbox
-      id="allow-late-submission"
-      v-model="assignment.allowLateSubmission"
-      :label="t('Allow late submission')"
-      name="allow_late_submission"
-    />
+      <div v-if="assignment.allowMultipleSubmissions" class="max-w-xs mb-5">
+        <BaseInputNumber
+          v-model="assignment.requiredSubmissionCount"
+          :error-text="v$.requiredSubmissionCount.$errors.map((e) => e.$message).join('<br>')"
+          :is-invalid="v$.requiredSubmissionCount.$error"
+          :label="t('Required submission count')"
+          :min="1"
+          id="required-submission-count"
+        />
+      </div>
+    </Fieldset>
 
-    <BaseSelect
-      v-model="assignment.evaluationMode"
-      :is-invalid="v$.evaluationMode.$error"
-      :label="t('Evaluation mode')"
-      :message-text="v$.evaluationMode.$errors.map((e) => e.$message).join('<br>')"
-      :options="evaluationModeOptions"
-      id="evaluation-mode"
-      name="evaluation_mode"
-      option-label="label"
-      option-value="value"
-    />
-
-    <BaseCheckbox
-      id="add-to-gradebook"
-      v-model="chkAddToGradebook"
-      :label="t('Add to gradebook')"
-      name="add_to_gradebook"
-    />
-
-    <div v-if="chkAddToGradebook">
+    <Fieldset :legend="t('Evaluation & links')" class="mt-4">
       <BaseSelect
-        v-model="assignment.gradebookCategoryId"
-        :is-invalid="v$.gradebookCategoryId.$error"
-        :label="t('Select assessment')"
-        :message-text="v$.gradebookCategoryId.$errors.map((e) => e.$message).join('<br>')"
-        :options="gradebookCategories"
-        id="gradebook-category-id"
-        name="gradebook_category_id"
-        option-label="name"
-        option-value="id"
+        v-model="assignment.evaluationMode"
+        :is-invalid="v$.evaluationMode.$error"
+        :label="t('Evaluation mode')"
+        :message-text="v$.evaluationMode.$errors.map((e) => e.$message).join('<br>')"
+        :options="evaluationModeOptions"
+        id="evaluation-mode"
+        name="evaluation_mode"
+        option-label="label"
+        option-value="value"
       />
-    </div>
 
-    <BaseCheckbox
-      id="add-to-calendar"
-      v-model="assignment.addToCalendar"
-      :label="t('Add to calendar')"
-      name="add_to_calendar"
-    />
+      <BaseCheckbox
+        id="add-to-gradebook"
+        v-model="chkAddToGradebook"
+        :label="t('Add to gradebook')"
+        name="add_to_gradebook"
+      />
+
+      <div v-if="chkAddToGradebook">
+        <BaseSelect
+          v-model="assignment.gradebookCategoryId"
+          :is-invalid="v$.gradebookCategoryId.$error"
+          :label="t('Select assessment')"
+          :message-text="v$.gradebookCategoryId.$errors.map((e) => e.$message).join('<br>')"
+          :options="gradebookCategories"
+          id="gradebook-category-id"
+          name="gradebook_category_id"
+          option-label="name"
+          option-value="id"
+        />
+      </div>
+
+      <BaseCheckbox
+        id="add-to-calendar"
+        v-model="assignment.addToCalendar"
+        :label="t('Add to calendar')"
+        name="add_to_calendar"
+      />
+    </Fieldset>
 
     <div class="flex justify-end space-x-2 mt-2">
       <BaseButton
@@ -178,9 +234,12 @@
 </template>
 
 <script setup>
+import Fieldset from "primevue/fieldset"
 import BaseCalendar from "../basecomponents/BaseCalendar.vue"
 import BaseInputText from "../basecomponents/BaseInputText.vue"
+import BaseInputNumber from "../basecomponents/BaseInputNumber.vue"
 import BaseButton from "../basecomponents/BaseButton.vue"
+import BaseMenu from "../basecomponents/BaseMenu.vue"
 import BaseCheckbox from "../basecomponents/BaseCheckbox.vue"
 import BaseSelect from "../basecomponents/BaseSelect.vue"
 import BaseRadioButtons from "../basecomponents/BaseRadioButtons.vue"
@@ -188,10 +247,11 @@ import BaseFileUpload from "../basecomponents/BaseFileUpload.vue"
 import BaseTinyEditor from "../basecomponents/BaseTinyEditor.vue"
 import useVuelidate from "@vuelidate/core"
 import { computed, onMounted, reactive, ref, watchEffect } from "vue"
-import { maxValue, required, requiredIf } from "@vuelidate/validators"
+import { maxValue, minValue, required, requiredIf } from "@vuelidate/validators"
 import { useI18n } from "vue-i18n"
 import { useRoute, useRouter } from "vue-router"
 import { getCourseContext } from "../../utils/courseContext"
+import { useFormatDate } from "../../composables/formatDate"
 import { useNotification } from "../../composables/notification"
 import { RESOURCE_LINK_PUBLISHED } from "../../constants/entity/resourcelink"
 import documentsService from "../../services/documents"
@@ -228,6 +288,7 @@ const route = useRoute()
 const router = useRouter()
 const { cid, sid, gid } = getCourseContext()
 const { showErrorNotification } = useNotification()
+const { abbreviatedDatetime } = useFormatDate()
 
 // Whole-course vs. session-scoped assignments are NOT chosen by the teacher in
 // this form: like AssignmentsForm.vue (assets/vue/components/assignments/AssignmentsForm.vue),
@@ -245,6 +306,7 @@ const formSubmitted = ref(false)
 const isUploadingTemplate = ref(false)
 const templateDocumentName = ref("")
 const isFormsLoading = ref(false)
+const isDuplicatingForm = ref(false)
 
 const forms = ref([])
 
@@ -270,9 +332,15 @@ const assignment = reactive({
   title: "",
   description: "",
   submissionType: HOMEWORK_ASSIGNMENT_TYPE_FILE,
-  opensOn: null,
+  // Defaults to "now" (like deadline below) rather than left empty - with
+  // opensOn now actually enforced (see CHomeworkSubmissionStatusResolver),
+  // an unset value should mean "already open", not "silently unenforced"
+  // like it used to. The teacher can still push it into the future.
+  opensOn: new Date(),
   deadline: new Date(),
   allowLateSubmission: false,
+  allowMultipleSubmissions: false,
+  requiredSubmissionCount: 1,
   templateDocument: null,
   form: null,
   evaluationMode: HOMEWORK_ASSIGNMENT_EVALUATION_NONE,
@@ -290,6 +358,16 @@ onMounted(async () => {
   try {
     const { items } = await homeworkFormService.listForms()
     forms.value = items || []
+
+    // Only when creating a new assignment - never override an existing
+    // assignment's saved submissionType/form (isEditMode's own watchEffect
+    // owns that prefill).
+    if (!isEditMode.value && forms.value.length > 0) {
+      assignment.submissionType = HOMEWORK_ASSIGNMENT_TYPE_FORM
+      if (forms.value.length === 1) {
+        assignment.form = forms.value[0]["@id"]
+      }
+    }
   } catch (error) {
     showErrorNotification(error)
   } finally {
@@ -326,6 +404,8 @@ watchEffect(() => {
   assignment.opensOn = fromApiLocal(def.opensOn)
   assignment.deadline = fromApiLocal(def.deadline) ?? new Date()
   assignment.allowLateSubmission = !!def.allowLateSubmission
+  assignment.allowMultipleSubmissions = !!def.allowMultipleSubmissions
+  assignment.requiredSubmissionCount = def.requiredSubmissionCount ?? 1
   assignment.templateDocument = def.templateDocument ?? null
   assignment.form = def.form ?? null
   assignment.evaluationMode = def.evaluationMode
@@ -364,12 +444,32 @@ async function onTemplateFileSelected(file) {
   }
 }
 
+// Extracts the numeric id from an API Platform IRI (e.g.
+// "/api/c_homework_assignments/5" -> 5) - same convention used by
+// HomeworkList.vue's getAssignmentId().
+function assignmentIdFromIri(iri) {
+  const id = parseInt(String(iri).split("/").pop(), 10)
+  return Number.isNaN(id) ? null : id
+}
+
 function goToFormBuilder() {
   // returnTo tells HomeworkFormBuilder.vue where to navigate back to after
   // saving - the same convention used by the file-manager/document-picker
   // flows (see assets/vue/views/documents/DocumentsUpload.vue,
-  // assets/vue/views/filemanager/Upload.vue).
-  router.push({ name: "HomeworkFormBuilder", query: { cid, sid, gid, returnTo: "HomeworkAssignmentCreate" } })
+  // assets/vue/views/filemanager/Upload.vue). In edit mode this must point
+  // back to HomeworkAssignmentEdit (with its assignmentId), not
+  // HomeworkAssignmentCreate, or the builder always bounces the teacher to
+  // the create screen after editing a form from an existing assignment.
+  router.push({
+    name: "HomeworkFormBuilder",
+    query: {
+      cid,
+      sid,
+      gid,
+      returnTo: isEditMode.value ? "HomeworkAssignmentEdit" : "HomeworkAssignmentCreate",
+      ...(isEditMode.value ? { returnAssignmentId: assignmentIdFromIri(props.defaultAssignment["@id"]) } : {}),
+    },
+  })
 }
 
 // assignment.form holds the selected form's IRI (e.g. "/api/c_homework_forms/5"),
@@ -382,15 +482,67 @@ const selectedFormId = computed(() => {
   return Number.isNaN(id) ? null : id
 })
 
+const selectedFormMeta = computed(() => forms.value.find((f) => f["@id"] === assignment.form) || null)
+
 function goToEditForm() {
   if (!selectedFormId.value) return
 
   router.push({
     name: "HomeworkFormBuilder",
     params: { formId: selectedFormId.value },
-    query: { cid, sid, gid, returnTo: "HomeworkAssignmentCreate" },
+    query: {
+      cid,
+      sid,
+      gid,
+      returnTo: isEditMode.value ? "HomeworkAssignmentEdit" : "HomeworkAssignmentCreate",
+      ...(isEditMode.value ? { returnAssignmentId: assignmentIdFromIri(props.defaultAssignment["@id"]) } : {}),
+    },
   })
 }
+
+// The safe alternative to Edit form: HomeworkFormBuilder.vue's PUT replaces
+// every page/field of the form being edited, which is destructive once a
+// form already has submissions - duplicating first, then editing the COPY,
+// never touches the original's rows or the submission answers pointing at
+// its fields (see DuplicateHomeworkFormAction).
+async function duplicateSelectedForm() {
+  if (!selectedFormId.value || isDuplicatingForm.value) return
+
+  isDuplicatingForm.value = true
+  try {
+    const duplicate = await homeworkFormService.duplicateForm(selectedFormId.value)
+    const duplicateId = assignmentIdFromIri(duplicate["@id"])
+
+    router.push({
+      name: "HomeworkFormBuilder",
+      params: { formId: duplicateId },
+      query: {
+        cid,
+        sid,
+        gid,
+        // Tells HomeworkFormBuilder.vue to skip its destructive-edit warning:
+        // this copy was just created and cannot have any submissions yet.
+        justCreated: 1,
+        returnTo: isEditMode.value ? "HomeworkAssignmentEdit" : "HomeworkAssignmentCreate",
+        ...(isEditMode.value ? { returnAssignmentId: assignmentIdFromIri(props.defaultAssignment["@id"]) } : {}),
+      },
+    })
+  } catch (error) {
+    showErrorNotification(error)
+  } finally {
+    isDuplicatingForm.value = false
+  }
+}
+
+// Groups the two actions that only apply to the currently selected form
+// behind one kebab menu instead of two more buttons next to the dropdown -
+// same BaseMenu + command pattern as LpRowItem.vue's row-actions menu.
+const formActionsMenu = ref()
+
+const formActionItems = computed(() => [
+  { label: t("Edit form"), icon: "edit", command: goToEditForm },
+  { label: t("Duplicate form"), icon: "copy", command: duplicateSelectedForm },
+])
 
 const rules = computed(() => ({
   title: { required, $autoDirty: true },
@@ -403,6 +555,11 @@ const rules = computed(() => ({
   },
   deadline: { required, $autoDirty: true },
   evaluationMode: { required },
+  requiredSubmissionCount: {
+    requiredIf: requiredIf(() => assignment.allowMultipleSubmissions),
+    minValue: minValue(1),
+    $autoDirty: true,
+  },
   gradebookCategoryId: {
     requiredIf: requiredIf(() => chkAddToGradebook.value),
     $autoDirty: true,
@@ -435,6 +592,10 @@ async function onSubmit() {
     submissionType: assignment.submissionType,
     deadline: assignment.deadline.toISOString(),
     allowLateSubmission: assignment.allowLateSubmission,
+    allowMultipleSubmissions: assignment.allowMultipleSubmissions,
+    requiredSubmissionCount: assignment.allowMultipleSubmissions
+      ? Number(assignment.requiredSubmissionCount)
+      : null,
     evaluationMode: assignment.evaluationMode,
     addToGradebook: chkAddToGradebook.value,
     addToCalendar: assignment.addToCalendar,

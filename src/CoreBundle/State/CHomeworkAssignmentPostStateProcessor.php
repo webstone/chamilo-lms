@@ -17,8 +17,6 @@ use Chamilo\CourseBundle\Entity\CCalendarEvent;
 use Chamilo\CourseBundle\Entity\CHomeworkAssignment;
 use Doctrine\ORM\EntityManagerInterface;
 use GradebookUtils;
-use LinkFactory;
-use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -31,7 +29,6 @@ final class CHomeworkAssignmentPostStateProcessor implements ProcessorInterface
         private readonly EntityManagerInterface $entityManager,
         private readonly TranslatorInterface $translator,
         private readonly SettingsManager $settingsManager,
-        private readonly LoggerInterface $logger,
     ) {}
 
     public function process(
@@ -175,28 +172,6 @@ final class CHomeworkAssignmentPostStateProcessor implements ProcessorInterface
     private function saveGradebookConfig(CHomeworkAssignment $assignment, Course $course, ?Session $session): void
     {
         if ($assignment->getGradebookCategoryId() <= 0) {
-            return;
-        }
-
-        // GradebookUtils::add_resource_to_course_gradebook() delegates to
-        // LinkFactory::create($resource_type), whose switch statement only
-        // recognizes a fixed set of LINK_* types (see
-        // public/main/gradebook/lib/be/linkfactory.class.php). LINK_HOMEWORK
-        // has no case there and no HomeworkLink (extends AbstractLink) class
-        // exists yet - create() would return null and the very next line
-        // inside add_resource_to_course_gradebook() would fatal-error calling
-        // set_user_id() on it. Building that class is a separate, substantial
-        // piece of work (see StudentPublicationLink, ~340 lines, needs
-        // submission-scoring queries that depend on the not-yet-built
-        // grading UI/repository methods), so until it exists we no-op instead
-        // of crashing the request.
-        if (null === LinkFactory::create(LINK_HOMEWORK)) {
-            $this->logger->warning(
-                'CHomeworkAssignmentPostStateProcessor: skipped gradebook link because '
-                .'LinkFactory has no case for LINK_HOMEWORK yet (no HomeworkLink class registered).',
-                ['assignmentId' => $assignment->getIid(), 'courseId' => $course->getId()]
-            );
-
             return;
         }
 

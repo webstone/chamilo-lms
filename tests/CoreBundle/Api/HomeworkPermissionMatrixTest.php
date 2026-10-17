@@ -12,11 +12,16 @@ use Chamilo\CoreBundle\Entity\Session;
 use Chamilo\CoreBundle\Entity\User;
 use Chamilo\CourseBundle\Entity\CDocument;
 use Chamilo\CourseBundle\Entity\CHomeworkAssignment;
+use Chamilo\CourseBundle\Entity\CHomeworkAssignmentEvaluation;
 use Chamilo\CourseBundle\Entity\CHomeworkForm;
 use Chamilo\CourseBundle\Entity\CHomeworkSubmission;
+use Chamilo\CoreBundle\Framework\Container;
 use Chamilo\Tests\AbstractApiTest;
 use Chamilo\Tests\ChamiloTestTrait;
 use DateTime;
+use HomeworkLink;
+use Symfony\Component\HttpFoundation\Session\Session as HttpSession;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
 /**
  * Functional (HTTP, full API-Platform pipeline) coverage for the permission
@@ -551,6 +556,270 @@ final class HomeworkPermissionMatrixTest extends AbstractApiTest
     }
 
     /**
+     * Core requirement for docs/superpowers/specs/2026-09-28-homework-round4-design.md,
+     * section 4: a student must not be able to view their own final
+     * evaluation before the assignment's deadline has passed.
+     */
+    public function testStudentCannotViewFinalEvaluationBeforeDeadline(): void
+    {
+        [$course, , $evaluation, , $student] = $this->buildEvaluationVisibilityFixture(
+            'before_deadline',
+            new DateTime('2099-01-01 23:59:00'),
+        );
+
+        $token = $this->getUserTokenFromUser($student);
+
+        $this->createClientWithCredentials($token)->request(
+            'GET',
+            '/api/c_homework_assignment_evaluations/'.$evaluation->getIid(),
+            ['query' => ['cid' => $course->getId()]]
+        );
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    /**
+     * Companion positive case: once the deadline has passed, the same
+     * student must see their own evaluation.
+     */
+    public function testStudentCanViewFinalEvaluationAfterDeadline(): void
+    {
+        [$course, , $evaluation, , $student] = $this->buildEvaluationVisibilityFixture(
+            'after_deadline',
+            new DateTime('2020-01-01 23:59:00'),
+        );
+
+        $token = $this->getUserTokenFromUser($student);
+
+        $response = $this->createClientWithCredentials($token)->request(
+            'GET',
+            '/api/c_homework_assignment_evaluations/'.$evaluation->getIid(),
+            ['query' => ['cid' => $course->getId()]]
+        );
+
+        $this->assertResponseIsSuccessful();
+        // assertEquals, not assertSame: json_decode()'s type for a
+        // whole-number float (16.0) is a plain PHP int (16), not a float -
+        // this is a JSON/type-coercion detail, not a real value mismatch.
+        $this->assertEquals(16.0, $response->toArray()['score'] ?? null);
+    }
+
+    /**
+     * The deadline gate must not affect the teacher - HomeworkVoter's EDIT
+     * grant (course-wide, via HomeworkCourseTeacherChecker) bypasses it
+     * entirely regardless of $deadline.
+     */
+    public function testTeacherCanViewFinalEvaluationBeforeDeadline(): void
+    {
+        [$course, , $evaluation, $teacher] = $this->buildEvaluationVisibilityFixture(
+            'teacher_before_deadline',
+            new DateTime('2099-01-01 23:59:00'),
+        );
+
+        $token = $this->getUserTokenFromUser($teacher);
+
+        $this->createClientWithCredentials($token)->request(
+            'GET',
+            '/api/c_homework_assignment_evaluations/'.$evaluation->getIid(),
+            ['query' => ['cid' => $course->getId()]]
+        );
+
+        $this->assertResponseIsSuccessful();
+    }
+
+    /**
+     * Same bypass, platform-admin path - mirrors testPlatformAdminHasFullAccessRegardless.
+     */
+    public function testSuperadminCanViewFinalEvaluationBeforeDeadline(): void
+    {
+        [$course, , $evaluation] = $this->buildEvaluationVisibilityFixture(
+            'admin_before_deadline',
+            new DateTime('2099-01-01 23:59:00'),
+        );
+        $admin = $this->createUser('homework_eval_visibility_admin', '', '', 'ROLE_GLOBAL_ADMIN');
+
+        $token = $this->getUserTokenFromUser($admin);
+
+        $this->createClientWithCredentials($token)->request(
+            'GET',
+            '/api/c_homework_assignment_evaluations/'.$evaluation->getIid(),
+            ['query' => ['cid' => $course->getId()]]
+        );
+
+        $this->assertResponseIsSuccessful();
+    }
+
+    /**
+     * Collection-level counterpart: CHomeworkAssignmentEvaluationExtension
+     * must also exclude the row from GetCollection before the deadline, not
+     * just deny the single-item Get.
+     */
+    public function testStudentCannotListFinalEvaluationBeforeDeadlineInCollection(): void
+    {
+        [$course, $assignment, , , $student] = $this->buildEvaluationVisibilityFixture(
+            'collection_before_deadline',
+            new DateTime('2099-01-01 23:59:00'),
+        );
+
+        $token = $this->getUserTokenFromUser($student);
+
+        $response = $this->createClientWithCredentials($token)->request(
+            'GET',
+            '/api/c_homework_assignment_evaluations',
+            ['query' => ['cid' => $course->getId(), 'assignment.iid' => $assignment->getIid()]]
+        );
+
+        $this->assertResponseIsSuccessful();
+        $this->assertCount(0, $response->toArray()['hydra:member'] ?? ['unexpected']);
+    }
+
+    public function testStudentCanListFinalEvaluationAfterDeadlineInCollection(): void
+    {
+        [$course, $assignment, $evaluation, , $student] = $this->buildEvaluationVisibilityFixture(
+            'collection_after_deadline',
+            new DateTime('2020-01-01 23:59:00'),
+        );
+
+        $token = $this->getUserTokenFromUser($student);
+
+        $response = $this->createClientWithCredentials($token)->request(
+            'GET',
+            '/api/c_homework_assignment_evaluations',
+            ['query' => ['cid' => $course->getId(), 'assignment.iid' => $assignment->getIid()]]
+        );
+
+        $this->assertResponseIsSuccessful();
+        $members = $response->toArray()['hydra:member'] ?? [];
+        $this->assertCount(1, $members);
+        $this->assertSame('/api/c_homework_assignment_evaluations/'.$evaluation->getIid(), $members[0]['@id'] ?? null);
+    }
+
+    /**
+     * The gradebook's legacy HomeworkLink::calc_score() reads the evaluation
+     * score directly via Doctrine (Database::getManager()), bypassing the API
+     * Platform security expression / CHomeworkAssignmentEvaluationExtension
+     * entirely - it must therefore enforce the same
+     * isVisibleToStudent()/deadline rule itself, or a student would see their
+     * final score in the course gradebook before the assignment's deadline
+     * even though the API correctly hides it (see
+     * testStudentCannotViewFinalEvaluationBeforeDeadline() above).
+     */
+    public function testGradebookHidesFinalEvaluationScoreFromStudentBeforeDeadline(): void
+    {
+        [, $assignment, , , $student] = $this->buildEvaluationVisibilityFixture(
+            'gradebook_before_deadline',
+            new DateTime('2099-01-01 23:59:00'),
+        );
+
+        $this->bootLegacyGradebookContext();
+
+        $link = new HomeworkLink();
+        $link->set_ref_id($assignment->getIid());
+
+        $this->assertSame([null, null], $link->calc_score($student->getId()));
+    }
+
+    /**
+     * Companion positive case: once the deadline has passed, the gradebook
+     * must show the same score the API now also allows through.
+     */
+    public function testGradebookShowsFinalEvaluationScoreToStudentAfterDeadline(): void
+    {
+        [, $assignment, , , $student] = $this->buildEvaluationVisibilityFixture(
+            'gradebook_after_deadline',
+            new DateTime('2020-01-01 23:59:00'),
+        );
+
+        $this->bootLegacyGradebookContext();
+
+        $link = new HomeworkLink();
+        $link->set_ref_id($assignment->getIid());
+
+        $score = $link->calc_score($student->getId());
+
+        $this->assertNotNull($score[0] ?? null);
+        $this->assertEquals(16.0, $score[0]);
+    }
+
+    /**
+     * HomeworkLink is legacy public/main code, not an API Platform resource -
+     * calling it directly (no HTTP request) leaves several static legacy
+     * bridges unwired that a real request would set up automatically:
+     *   - Database::getManager() (normally wired per-request by
+     *     LegacyListener) so getAssignment()/calc_score() can query through
+     *     the same EntityManager the fixture persisted through;
+     *   - Container::$container, needed by Container::getAuthorizationChecker();
+     *   - a session, since AbstractLink::__construct()'s set_type() call
+     *     chain reaches into api_get_setting() -> Container::getSession(),
+     *     which otherwise throws SessionNotFoundException with no request in
+     *     flight. A bare MockArraySessionStorage is enough - nothing here
+     *     reads or writes actual session values.
+     */
+    private function bootLegacyGradebookContext(): void
+    {
+        Container::setContainer(static::getContainer());
+        Container::setLegacyServices(static::getContainer());
+        Container::setSession(new HttpSession(new MockArraySessionStorage()));
+    }
+
+    /**
+     * Shared fixture for the final-evaluation deadline-visibility tests
+     * (docs/superpowers/specs/2026-09-28-homework-round4-design.md, section
+     * 4): a course, one course-level teacher, one student, an assignment
+     * with the given deadline, and a final evaluation for that student -
+     * built directly (not via HTTP POST) since these tests only exercise
+     * read visibility, not creation-time stamping (see
+     * CHomeworkAssignmentEvaluationProcessorTest for that path).
+     *
+     * @return array{0: Course, 1: CHomeworkAssignment, 2: CHomeworkAssignmentEvaluation, 3: User, 4: User}
+     *               Element 3 is the teacher, element 4 is the student.
+     */
+    private function buildEvaluationVisibilityFixture(string $suffix, DateTime $deadline): array
+    {
+        // Course::setCode() copies the title verbatim into visual_code
+        // (VARCHAR(40), no truncation at the PHP level) - a longer prefix
+        // here previously overflowed that column for the longer suffixes
+        // this fixture is called with (e.g. 'collection_before_deadline'),
+        // causing every one of these tests to error out at fixture-creation
+        // time with a DB truncation error before the test body ever ran.
+        $course = $this->createCourse('hw_eval_'.$suffix);
+        $teacher = $this->createUser('homework_eval_visibility_teacher_'.$suffix);
+        $student = $this->createUser('homework_eval_visibility_student_'.$suffix);
+        $course->addUserAsTeacher($teacher);
+
+        $em = $this->getEntityManager();
+        $em->persist($course);
+        $em->flush();
+
+        $assignment = (new CHomeworkAssignment())
+            ->setTitle('Verslag eindbeoordeling zichtbaarheid - '.$suffix)
+            ->setSubmissionType(CHomeworkAssignment::TYPE_FILE)
+            ->setDeadline($deadline)
+            ->setAllowMultipleSubmissions(true)
+            ->setRequiredSubmissionCount(1)
+            ->setEvaluationMode(CHomeworkAssignment::EVALUATION_SCORE)
+            ->setCreator($teacher)
+        ;
+        $assignment->setParent($course);
+        $assignment->addCourseLink($course);
+        $em->persist($assignment);
+
+        $evaluation = (new CHomeworkAssignmentEvaluation())
+            ->setAssignment($assignment)
+            ->setUser($student)
+            ->setScore(16.0)
+            ->setFeedback('Sterk werk.')
+            ->setCreator($teacher)
+        ;
+        $evaluation->setParent($course);
+        $evaluation->addUserLink($student, $course);
+        $em->persist($evaluation);
+        $em->flush();
+
+        return [$course, $assignment, $evaluation, $teacher, $student];
+    }
+
+    /**
      * Collection-level counterpart to the pagination-truncation fix: proves
      * the new "status" SearchFilter (src/CourseBundle/Entity/CHomeworkSubmission.php)
      * actually scopes the collection server-side. HomeworkCorrectAndRate.vue
@@ -618,6 +887,120 @@ final class HomeworkPermissionMatrixTest extends AbstractApiTest
             '/api/c_homework_submissions/'.$draftSubmission->getIid(),
             $members[0]['@id'] ?? null
         );
+    }
+
+    /**
+     * Functional coverage for docs/superpowers/specs/2026-09-28-homework-round4-design.md,
+     * section 5: the new "user" SearchFilter scopes CHomeworkSubmission's
+     * GetCollection server-side, same pattern as the existing "status" filter
+     * test.
+     */
+    public function testUserFilterScopesCollectionServerSide(): void
+    {
+        $studentA = $this->createUser('homework_matrix_student_user_filter_a');
+        $studentB = $this->createUser('homework_matrix_student_user_filter_b');
+
+        [$course, $assignment, $submissionA] = $this->buildSingleStudentSubmissionFixture(
+            'user_filter',
+            $studentA,
+        );
+
+        $em = $this->getEntityManager();
+        $submissionB = (new CHomeworkSubmission())
+            ->setAssignment($assignment)
+            ->setUser($studentB)
+            ->setStatus(CHomeworkSubmission::STATUS_SUBMITTED)
+            ->setSubmittedAt(new DateTime())
+            ->setCreator($studentB)
+        ;
+        $submissionB->setParent($course);
+        $submissionB->addUserLink($studentB, $course);
+        $em->persist($submissionB);
+        $em->flush();
+
+        $teacher = $this->createUser('homework_matrix_teacher_user_filter');
+        $course->addUserAsTeacher($teacher);
+        $em->persist($course);
+        $em->flush();
+
+        $token = $this->getUserTokenFromUser($teacher);
+
+        $response = $this->createClientWithCredentials($token)->request(
+            'GET',
+            '/api/c_homework_submissions',
+            [
+                'query' => [
+                    'cid' => $course->getId(),
+                    'assignment.iid' => $assignment->getIid(),
+                    'user' => $studentA->getId(),
+                ],
+            ]
+        );
+
+        $this->assertResponseIsSuccessful();
+
+        $members = json_decode($response->getContent(), true)['hydra:member'] ?? [];
+        $this->assertCount(1, $members, 'The "user" filter must scope the collection server-side.');
+        $this->assertSame('/api/c_homework_submissions/'.$submissionA->getIid(), $members[0]['@id'] ?? null);
+    }
+
+    /**
+     * Companion to testUserFilterScopesCollectionServerSide(): the SearchFilter
+     * comment on CHomeworkSubmission claims "accepts either a raw id or a full
+     * IRI", but the raw-id case above is NOT what the shipped UI ever sends -
+     * HomeworkCorrectAndRate.vue's studentFilter always holds a full user IRI
+     * (e.g. "/api/users/123"), never a bare id. This test exercises that
+     * actual production code path.
+     */
+    public function testUserFilterAcceptsFullIriAsWellAsRawId(): void
+    {
+        $studentA = $this->createUser('homework_matrix_student_user_filter_iri_a');
+        $studentB = $this->createUser('homework_matrix_student_user_filter_iri_b');
+
+        [$course, $assignment, $submissionA] = $this->buildSingleStudentSubmissionFixture(
+            'user_filter_iri',
+            $studentA,
+        );
+
+        $em = $this->getEntityManager();
+        $submissionB = (new CHomeworkSubmission())
+            ->setAssignment($assignment)
+            ->setUser($studentB)
+            ->setStatus(CHomeworkSubmission::STATUS_SUBMITTED)
+            ->setSubmittedAt(new DateTime())
+            ->setCreator($studentB)
+        ;
+        $submissionB->setParent($course);
+        $submissionB->addUserLink($studentB, $course);
+        $em->persist($submissionB);
+        $em->flush();
+
+        $teacher = $this->createUser('homework_matrix_teacher_user_filter_iri');
+        $course->addUserAsTeacher($teacher);
+        $em->persist($course);
+        $em->flush();
+
+        $token = $this->getUserTokenFromUser($teacher);
+
+        $response = $this->createClientWithCredentials($token)->request(
+            'GET',
+            '/api/c_homework_submissions',
+            [
+                'query' => [
+                    'cid' => $course->getId(),
+                    'assignment.iid' => $assignment->getIid(),
+                    // Full IRI, not a raw id - this is what studentFilter.value
+                    // actually holds in HomeworkCorrectAndRate.vue.
+                    'user' => '/api/users/'.$studentA->getId(),
+                ],
+            ]
+        );
+
+        $this->assertResponseIsSuccessful();
+
+        $members = json_decode($response->getContent(), true)['hydra:member'] ?? [];
+        $this->assertCount(1, $members, 'The "user" filter must also accept a full IRI, not just a raw id.');
+        $this->assertSame('/api/c_homework_submissions/'.$submissionA->getIid(), $members[0]['@id'] ?? null);
     }
 
     /**
@@ -963,7 +1346,13 @@ final class HomeworkPermissionMatrixTest extends AbstractApiTest
      */
     private function buildCrossSessionGradingFixture(string $suffix): array
     {
-        $course = $this->createCourse('homework_matrix_course_'.$suffix);
+        // Short prefix, not 'homework_matrix_course_': Course::setCode()
+        // copies the title verbatim into visual_code (VARCHAR(40), no
+        // truncation at the PHP level) - the longer prefix overflowed that
+        // column for this method's longer suffixes (e.g.
+        // 'submission_collection_sid'), same pitfall already fixed once for
+        // buildEvaluationVisibilityFixture() above.
+        $course = $this->createCourse('hw_matrix_'.$suffix);
         $sessionA = $this->createSession('homework_matrix_session_a_'.$suffix);
         $sessionB = $this->createSession('homework_matrix_session_b_'.$suffix);
         $teacher = $this->createUser('homework_matrix_teacher_'.$suffix);
@@ -1040,7 +1429,7 @@ final class HomeworkPermissionMatrixTest extends AbstractApiTest
             $submittedAt = new DateTime();
         }
 
-        $course = $this->createCourse('homework_matrix_course_'.$suffix);
+        $course = $this->createCourse('hw_matrix_'.$suffix);
 
         $em = $this->getEntityManager();
 
@@ -1088,7 +1477,7 @@ final class HomeworkPermissionMatrixTest extends AbstractApiTest
      */
     private function buildCrossSessionFormFixture(string $suffix): array
     {
-        $course = $this->createCourse('homework_matrix_course_'.$suffix);
+        $course = $this->createCourse('hw_matrix_'.$suffix);
         $sessionA = $this->createSession('homework_matrix_session_a_'.$suffix);
         $sessionB = $this->createSession('homework_matrix_session_b_'.$suffix);
         $teacher = $this->createUser('homework_matrix_teacher_'.$suffix);

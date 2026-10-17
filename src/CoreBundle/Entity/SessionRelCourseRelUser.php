@@ -42,6 +42,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         'user' => 'exact',
         'session' => 'exact',
         'course' => 'exact',
+        'status' => 'exact',
         'user.username' => 'partial',
     ]
 )]

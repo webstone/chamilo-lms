@@ -3,27 +3,25 @@
     class="field"
     data-chamilo-editor="BaseTinyEditor"
   >
-    <FloatLabel variant="on">
-      <div
-        :class="[
-          'html-editor-container',
-          { 'html-editor-container--filled': hasContent, 'html-editor-container--focused': isFocused },
-        ]"
-      >
-        <TinyEditor
-          :id="editorId"
-          v-model="modelValue"
-          :init="editorConfig"
-          :required="required"
-        />
-      </div>
-      <label
-        v-if="title"
-        :for="editorId"
-      >
-        {{ title }}
-      </label>
-    </FloatLabel>
+    <label
+      v-if="title"
+      :for="editorId"
+      class="block mb-2"
+      v-text="title"
+    />
+    <div
+      :class="[
+        'html-editor-container',
+        { 'html-editor-container--filled': hasContent, 'html-editor-container--focused': isFocused },
+      ]"
+    >
+      <TinyEditor
+        :id="editorId"
+        v-model="modelValue"
+        :init="editorConfig"
+        :required="required"
+      />
+    </div>
     <small
       v-if="helpText"
       v-text="helpText"
@@ -38,7 +36,6 @@ import { useRoute, useRouter } from "vue-router"
 import { useCidReqStore } from "../../store/cidReq"
 import { storeToRefs } from "pinia"
 import { useSecurityStore } from "../../store/securityStore"
-import FloatLabel from "primevue/floatlabel"
 import { useLocale } from "../../composables/locale"
 
 const modelValue = defineModel({ type: String, required: true })

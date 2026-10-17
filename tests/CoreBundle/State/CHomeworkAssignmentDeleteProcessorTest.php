@@ -57,7 +57,9 @@ final class CHomeworkAssignmentDeleteProcessorTest extends AbstractApiTest
 
         $this->assertResponseStatusCodeSame(204);
 
-        $em->clear();
+        // Re-resolve $em (see the other two tests' comments for why) rather
+        // than just clearing the possibly-stale instance captured above.
+        $em = $this->getEntityManager();
         $this->assertNull($em->getRepository(CHomeworkAssignment::class)->find($assignment->getIid()));
     }
 
@@ -74,6 +76,20 @@ final class CHomeworkAssignmentDeleteProcessorTest extends AbstractApiTest
         $em->flush();
 
         $assignment = $this->createAssignmentFixture($course, 'Opdracht met enkel een concept');
+
+        // createAssignmentFixture() goes through an HTTP client request,
+        // which may reboot the kernel/container - $em/$course/$student
+        // captured above can then be tied to a DIFFERENT EntityManager
+        // instance than the one behind $this->getEntityManager() now,
+        // making them look "foreign"/unpersisted to it even though they
+        // point at the same database (confirmed live 2026-09-11:
+        // ORMInvalidArgumentException - this is the first time this test
+        // ever actually ran, see this class's own docblock). Re-resolve
+        // $em and every entity used below through it.
+        $em = $this->getEntityManager();
+        $assignment = $em->getRepository(CHomeworkAssignment::class)->find($assignment->getIid());
+        $course = $em->getRepository(\Chamilo\CoreBundle\Entity\Course::class)->find($course->getId());
+        $student = $em->find(\Chamilo\CoreBundle\Entity\User::class, $student->getId());
 
         // A student who merely opened the form (draft, never hit "Submit")
         // must NOT block deletion - only real SUBMITTED/LATE work should.
@@ -113,6 +129,13 @@ final class CHomeworkAssignmentDeleteProcessorTest extends AbstractApiTest
 
         $assignment = $this->createAssignmentFixture($course, 'Opdracht met een ingediend verslag');
 
+        // See the sibling test's identical comment above for why this
+        // re-resolution is necessary.
+        $em = $this->getEntityManager();
+        $assignment = $em->getRepository(CHomeworkAssignment::class)->find($assignment->getIid());
+        $course = $em->getRepository(\Chamilo\CoreBundle\Entity\Course::class)->find($course->getId());
+        $student = $em->find(\Chamilo\CoreBundle\Entity\User::class, $student->getId());
+
         $submission = (new CHomeworkSubmission())
             ->setAssignment($assignment)
             ->setUser($student)
@@ -140,6 +163,37 @@ final class CHomeworkAssignmentDeleteProcessorTest extends AbstractApiTest
             $em->getRepository(CHomeworkAssignment::class)->find($assignment->getIid()),
             'The assignment must survive a rejected delete attempt.'
         );
+    }
+
+    public function testDeletingAssignmentCleansUpResourceNodeLinks(): void
+    {
+        $course = $this->createCourse('homework_delete_course_cleanup');
+        $teacher = $this->createUser('homework_delete_teacher_cleanup');
+        $course->addSubscriptionForUser($teacher, 0, null, CourseRelUser::TEACHER);
+
+        $em = $this->getEntityManager();
+        $em->persist($course);
+        $em->flush();
+
+        $assignment = $this->createAssignmentFixture($course, 'Opdracht cleanup-test');
+        $resourceNodeId = $assignment->getResourceNode()->getId();
+
+        $token = $this->getUserTokenFromUser($teacher);
+
+        $this->createClientWithCredentials($token)->request(
+            'DELETE',
+            '/api/c_homework_assignments/'.$assignment->getIid(),
+            ['query' => ['cid' => $course->getId()]]
+        );
+
+        $this->assertResponseStatusCodeSame(204);
+
+        // Deleting the assignment must not leave its resource_link row(s)
+        // behind - same structural gap already known for course deletion
+        // (see PR #8675).
+        $em = $this->getEntityManager();
+        $remainingLinks = $em->getRepository(ResourceLink::class)->findBy(['resourceNode' => $resourceNodeId]);
+        $this->assertCount(0, $remainingLinks, 'Deleting the assignment must also remove its resource_link rows.');
     }
 
     private function createAssignmentFixture(\Chamilo\CoreBundle\Entity\Course $course, string $title): CHomeworkAssignment
@@ -171,7 +225,16 @@ final class CHomeworkAssignmentDeleteProcessorTest extends AbstractApiTest
         );
 
         $this->assertResponseStatusCodeSame(201);
-        $assignmentId = $response->toArray()['iid'];
+        // CHomeworkAssignment never exposes `iid` as a serialized property
+        // (no Groups on that field - it's the identifier, exposed only via
+        // the JSON-LD "@id" IRI). Fixed 2026-09-11: `->toArray()['iid']`
+        // always threw "Undefined array key" - this is the first time this
+        // test class actually ran to completion (previously blocked by the
+        // "test.service_container"/test-DB environment gap documented in
+        // this class's own docblock above), which is how this latent bug
+        // went undetected until now.
+        $data = $response->toArray();
+        $assignmentId = (int) \substr((string) $data['@id'], \strrpos((string) $data['@id'], '/') + 1);
 
         $em->clear();
 

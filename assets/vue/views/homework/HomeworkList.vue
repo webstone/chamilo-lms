@@ -11,7 +11,20 @@
       />
     </div>
 
+    <!-- Same EmptyState convention as LpList.vue/GlossaryList.vue/LinksList.vue
+         (icon + summary + detail) instead of BaseTable's own bare
+         text-for-empty string - no CTA button here, unlike those, since this
+         module already has a persistent "Create homework assignment" button
+         in the header above, so a second one here would just duplicate it. -->
+    <EmptyState
+      v-if="!isLoading && 0 === totalItems"
+      :detail="t('Homework assignments created for this course will appear here.')"
+      :summary="t('No homework assignments have been created for this course yet.')"
+      icon="file-text"
+    />
+
     <BaseTable
+      v-else
       data-key="@id"
       :is-loading="isLoading"
       :total-items="totalItems"
@@ -64,18 +77,19 @@
         <template #body="slotProps">
           <template v-if="isTeacher">
             <BaseButton
-              icon="edit"
-              size="small"
-              type="black"
-              :label="t('Edit')"
-              @click="() => goToEdit(slotProps.data)"
-            />
-            <BaseButton
               icon="check"
               size="small"
-              type="tertiary-text"
+              type="black"
               :label="t('Review')"
               @click="() => goToCorrect(slotProps.data)"
+            />
+            <BaseButton
+              icon="edit"
+              only-icon
+              size="small"
+              type="secondary"
+              :label="t('Edit')"
+              @click="() => goToEdit(slotProps.data)"
             />
             <span
               :title="
@@ -85,8 +99,9 @@
               <BaseButton
                 :disabled="!canDeleteAssignment(slotProps.data)"
                 icon="trash"
+                only-icon
                 size="small"
-                type="tertiary-text"
+                type="danger"
                 :label="t('Delete')"
                 @click="() => onClickDelete(slotProps.data)"
               />
@@ -121,6 +136,7 @@ import { useRoute, useRouter } from "vue-router"
 import Column from "primevue/column"
 import homeworkAssignmentService from "../../services/chomeworkassignment"
 import homeworkSubmissionService from "../../services/chomeworksubmission"
+import homeworkAssignmentProgressService from "../../services/homeworkassignmentprogress"
 import courseRelUserService from "../../services/courseRelUserService"
 import sessionRelCourseRelUserService from "../../services/sessionRelCourseRelUserService"
 import { useSecurityStore } from "../../store/securityStore"
@@ -131,10 +147,12 @@ import { useConfirmation } from "../../composables/useConfirmation"
 import { getCourseContext } from "../../utils/courseContext"
 import BaseButton from "../../components/basecomponents/BaseButton.vue"
 import BaseTable from "../../components/basecomponents/BaseTable.vue"
+import EmptyState from "../../components/EmptyState.vue"
 import {
   HOMEWORK_SUBMISSION_STATUS_LATE,
   HOMEWORK_SUBMISSION_STATUS_SUBMITTED,
 } from "../../constants/entity/chomeworksubmission"
+import { SESSION_STUDENT } from "../../constants/entity/session"
 
 // Chamilo's legacy course_rel_user.status convention (see CourseRelUserTest /
 // AssignmentAddUser.vue for the same value used the same way): 5 = student.
@@ -180,10 +198,13 @@ const loadParams = reactive({
 // assets/vue/components/assignments/TeacherAssignmentList.vue).
 const sortFields = ref([{ field: "deadline", order: -1 }])
 
-// Keyed by numeric assignment id. Only ever populated for students - a
-// teacher has no "own" submission to look up, and CHomeworkSubmissionExtension
-// scopes GetCollection to the current user's own submissions anyway, so
-// calling this as a teacher would be both wasted work and meaningless.
+// Keyed by numeric assignment id, each value the full array of the current
+// student's own CHomeworkSubmission rows for that assignment (there can be
+// more than one for a multi-report assignment - one per sequenceNumber).
+// Only ever populated for students - a teacher has no "own" submission to
+// look up, and CHomeworkSubmissionExtension scopes GetCollection to the
+// current user's own submissions anyway, so calling this as a teacher would
+// be both wasted work and meaningless.
 const mySubmissionByAssignmentId = ref({})
 
 // Teacher-only counterparts: how many students are enrolled in the course/
@@ -194,6 +215,15 @@ const mySubmissionByAssignmentId = ref({})
 const studentTotal = ref(0)
 const submittedCountByAssignmentId = ref({})
 
+// Multi-report assignments only: how many students already reached their
+// requiredSubmissionCount (on-time reports only - same "Reached" definition
+// already used on the per-assignment progress table in
+// HomeworkCorrectAndRate.vue, kept consistent between both screens). Raw
+// report-row counts (submittedCountByAssignmentId above) are meaningless as
+// a "students done" indicator here, since one student can hold many of
+// those rows - see teacherStatusLabel() below.
+const completedCountByAssignmentId = ref({})
+
 async function loadStudentTotal() {
   if (!isTeacher.value) return
 
@@ -202,11 +232,16 @@ async function loadStudentTotal() {
 
   try {
     if (sid) {
-      // sessionRelCourseRelUserService has no server-side "student only"
-      // filter (unlike courseRelUserService's `status`), so this can also
-      // count session coaches - same imprecision already accepted by the
-      // reference AssignmentAddUser.vue, which uses this exact same call.
-      const { totalItems: sessionTotal } = await sessionRelCourseRelUserService.findAll({ session: sid, course: cid })
+      // status=SESSION_STUDENT excludes session/course coaches from the
+      // count - the entity's `status` field is now filterable server-side
+      // (see SessionRelCourseRelUser's SearchFilter). AssignmentAddUser.vue
+      // still uses the unfiltered call for its own, different purpose
+      // (listing everyone to add, not counting students).
+      const { totalItems: sessionTotal } = await sessionRelCourseRelUserService.findAll({
+        session: sid,
+        course: cid,
+        status: SESSION_STUDENT,
+      })
       studentTotal.value = sessionTotal || 0
     } else {
       const { totalItems: courseTotal } = await courseRelUserService.findAll({
@@ -228,11 +263,11 @@ async function loadMySubmissions() {
       const id = getAssignmentId(assignment)
       try {
         const { items } = await homeworkSubmissionService.listSubmissionsForAssignment(id)
-        return [id, items?.[0] || null]
+        return [id, items || []]
       } catch (error) {
         notification.showErrorNotification(error)
 
-        return [id, null]
+        return [id, []]
       }
     }),
   )
@@ -264,6 +299,31 @@ async function loadSubmittedCounts() {
   submittedCountByAssignmentId.value = Object.fromEntries(entries)
 }
 
+async function loadCompletedCounts() {
+  if (!isTeacher.value || !assignments.value.length) return
+
+  const multiReportAssignments = assignments.value.filter((assignment) => assignment.allowMultipleSubmissions)
+  if (!multiReportAssignments.length) return
+
+  const entries = await Promise.all(
+    multiReportAssignments.map(async (assignment) => {
+      const id = getAssignmentId(assignment)
+      try {
+        const { items } = await homeworkAssignmentProgressService.getProgress(id)
+        const completedCount = (items || []).filter((row) => row.onTimeCount >= row.requiredCount).length
+
+        return [id, completedCount]
+      } catch (error) {
+        notification.showErrorNotification(error)
+
+        return [id, 0]
+      }
+    }),
+  )
+
+  completedCountByAssignmentId.value = Object.fromEntries(entries)
+}
+
 async function loadAssignments() {
   isLoading.value = true
   try {
@@ -281,6 +341,11 @@ async function loadAssignments() {
     totalItems.value = result.totalItems || 0
 
     await Promise.all([loadMySubmissions(), loadStudentTotal(), loadSubmittedCounts()])
+    // Depends on assignments.value (for the allowMultipleSubmissions filter)
+    // only, not on the results of the calls above - runs after them simply
+    // to keep this function's control flow linear, not because of a real
+    // data dependency.
+    await loadCompletedCounts()
   } catch (error) {
     notification.showErrorNotification(error)
   } finally {
@@ -312,19 +377,30 @@ function onPage(event) {
   loadParams.itemsPerPage = event.rows
 }
 
+function mySubmissions(assignment) {
+  return mySubmissionByAssignmentId.value[getAssignmentId(assignment)] || []
+}
+
+// Single-report assignments only ever have one row (server always assigns
+// sequenceNumber = 1) - multi-report callers must use mySubmissions() instead
+// and reason about the whole array.
 function mySubmission(assignment) {
-  return mySubmissionByAssignmentId.value[getAssignmentId(assignment)] || null
+  return mySubmissions(assignment)[0] || null
 }
 
 function hasBeenSubmitted(assignment) {
-  const submission = mySubmission(assignment)
-
-  return (
-    !!submission && [HOMEWORK_SUBMISSION_STATUS_SUBMITTED, HOMEWORK_SUBMISSION_STATUS_LATE].includes(submission.status)
+  return mySubmissions(assignment).some((item) =>
+    [HOMEWORK_SUBMISSION_STATUS_SUBMITTED, HOMEWORK_SUBMISSION_STATUS_LATE].includes(item.status),
   )
 }
 
 function teacherStatusLabel(assignment) {
+  if (assignment.allowMultipleSubmissions) {
+    const completedCount = completedCountByAssignmentId.value[getAssignmentId(assignment)] ?? 0
+
+    return t("{completed} / {total} completed", { completed: completedCount, total: studentTotal.value })
+  }
+
   const submittedCount = submittedCountByAssignmentId.value[getAssignmentId(assignment)] ?? 0
 
   return t("{submitted} / {total} submitted", { submitted: submittedCount, total: studentTotal.value })
@@ -357,6 +433,21 @@ function onClickDelete(assignment) {
 }
 
 function studentStatusLabel(assignment) {
+  if (assignment.allowMultipleSubmissions) {
+    const reports = mySubmissions(assignment).filter((item) =>
+      [HOMEWORK_SUBMISSION_STATUS_SUBMITTED, HOMEWORK_SUBMISSION_STATUS_LATE].includes(item.status),
+    )
+    if (!reports.length) return t("Not submitted")
+
+    const lateCount = reports.filter((item) => item.status === HOMEWORK_SUBMISSION_STATUS_LATE).length
+    const base = t("{submitted}/{required} reports submitted", {
+      submitted: reports.length,
+      required: assignment.requiredSubmissionCount,
+    })
+
+    return lateCount > 0 ? `${base} (${t("{count} late", { count: lateCount })})` : base
+  }
+
   const submission = mySubmission(assignment)
   if (!submission) return t("Not submitted")
 

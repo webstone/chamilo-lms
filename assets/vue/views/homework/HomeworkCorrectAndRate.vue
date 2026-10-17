@@ -26,22 +26,119 @@
       />
       <p class="text-gray-60">{{ t("Deadline") }}: {{ abbreviatedDatetime(assignment.deadline) }}</p>
 
-      <div class="max-w-xs">
+      <div
+        v-if="assignment.allowMultipleSubmissions"
+        class="space-y-3"
+      >
+        <h2 class="text-lg font-semibold">{{ t("Progress overview") }}</h2>
+
+        <BaseTable
+          :values="progressRows"
+          data-key="userId"
+        >
+          <Column :header="t('Student')">
+            <template #body="{ data }">
+              {{ data.userFullName }}
+            </template>
+          </Column>
+
+          <Column :header="t('Progress')">
+            <template #body="{ data }">
+              {{ data.onTimeCount }}/{{ data.requiredCount }}
+              <span v-if="data.totalCount > data.onTimeCount">
+                ({{ data.totalCount }} {{ t("total, incl. late") }})
+              </span>
+            </template>
+          </Column>
+
+          <Column :header="t('Status')">
+            <template #body="{ data }">
+              <span :class="data.onTimeCount >= data.requiredCount ? 'text-primary' : 'text-warning'">
+                {{ data.onTimeCount >= data.requiredCount ? t("Reached") : t("Not reached") }}
+              </span>
+            </template>
+          </Column>
+
+          <Column :header="t('Final evaluation')">
+            <template #body="{ data }">
+              <BaseButton
+                :label="evaluationForUserId(data.userId) ? t('Edit final evaluation') : t('Add final evaluation')"
+                icon="check"
+                size="small"
+                type="primary-text"
+                @click="selectProgressRow(data)"
+              />
+            </template>
+          </Column>
+        </BaseTable>
+
+        <div
+          v-if="null !== selectedProgressUserId"
+          class="border border-gray-25 bg-gray-15 rounded-lg p-4 space-y-4"
+        >
+          <h3 class="text-lg font-semibold">{{ t("Final evaluation") }}</h3>
+
+          <BaseInputNumber
+            v-if="assignment.evaluationMode === HOMEWORK_ASSIGNMENT_EVALUATION_SCORE"
+            id="final-evaluation-score"
+            v-model="evaluationScoreInput"
+            :label="t('Score')"
+            :min="0"
+          />
+
+          <BaseTinyEditor
+            v-if="assignment.evaluationMode !== HOMEWORK_ASSIGNMENT_EVALUATION_NONE"
+            v-model="evaluationFeedbackInput"
+            editor-id="final-evaluation-feedback"
+            :editor-config="feedbackEditorConfig"
+            :full-page="false"
+            :title="t('Feedback')"
+            :use-file-manager="false"
+          />
+
+          <div class="flex justify-end">
+            <BaseButton
+              :is-loading="isSavingEvaluation"
+              :label="t('Save')"
+              icon="save"
+              type="primary"
+              @click="saveFinalEvaluation"
+            />
+          </div>
+        </div>
+
+        <hr />
+        <h2 class="text-lg font-semibold">{{ t("Individual reports") }}</h2>
+      </div>
+
+      <div class="flex items-center gap-2">
         <BaseSelect
           id="homework-status-filter"
           v-model="statusFilter"
           :label="t('Status')"
           :options="statusFilterOptions"
+          style="min-width: 200px"
+        />
+
+        <BaseSelect
+          id="homework-student-filter"
+          v-model="studentFilter"
+          :label="t('Student')"
+          :options="studentFilterOptions"
+          style="min-width: 200px"
         />
       </div>
 
       <BaseTable
         v-model:rows="loadParams.itemsPerPage"
+        v-model:sort-order="sortOrderValue"
         :is-loading="isLoadingSubmissions"
         :total-items="totalRecords"
         :values="submissions"
         data-key="@id"
         lazy
+        sort-field="submittedAt"
+        sort-mode="single"
         @page="onPage"
       >
         <Column :header="t('Student')">
@@ -56,7 +153,11 @@
           </template>
         </Column>
 
-        <Column :header="t('Submitted')">
+        <Column
+          :header="t('Submitted')"
+          :sortable="true"
+          field="submittedAt"
+        >
           <template #body="{ data }">
             {{ data.submittedAt ? abbreviatedDatetime(data.submittedAt) : "—" }}
           </template>
@@ -70,110 +171,27 @@
 
         <Column :header="t('Actions')">
           <template #body="{ data }">
-            <BaseButton
-              icon="check"
-              size="small"
-              type="primary-text"
-              :label="t('Review and rate')"
-              @click="selectSubmission(data)"
-            />
+            <div class="flex gap-2">
+              <BaseButton
+                icon="check"
+                size="small"
+                type="black"
+                :label="t('Review and rate')"
+                @click="goToGradeSubmission(data)"
+              />
+              <BaseButton
+                v-if="canDownload(data)"
+                icon="download"
+                size="small"
+                type="black"
+                :label="t('Download')"
+                @click="downloadSubmission(data)"
+              />
+            </div>
           </template>
         </Column>
       </BaseTable>
 
-      <div
-        v-if="selectedSubmission"
-        class="border rounded-lg p-4 space-y-4"
-      >
-        <h3 class="text-lg font-semibold">
-          {{ t("Grading {0}", [studentName(selectedSubmission)]) }}
-        </h3>
-
-        <!-- TYPE_FILE: single document download link. -->
-        <div v-if="assignment.submissionType === HOMEWORK_ASSIGNMENT_TYPE_FILE">
-          <a
-            v-if="selectedDocumentMeta?.downloadUrl"
-            :href="selectedDocumentMeta.downloadUrl"
-            class="text-primary underline"
-            rel="noopener"
-            target="_blank"
-          >
-            {{ t("Download submitted file") }}: {{ selectedDocumentMeta.title }}
-          </a>
-          <p
-            v-else-if="!selectedSubmissionDocumentIri"
-            v-text="t('No file was submitted.')"
-          />
-        </div>
-
-        <!-- TYPE_FORM: read-only rendering of each answer. -->
-        <div
-          v-else-if="assignment.submissionType === HOMEWORK_ASSIGNMENT_TYPE_FORM"
-          class="space-y-3"
-        >
-          <div
-            v-if="isFormLoading"
-            v-text="t('Loading...')"
-          />
-
-          <div
-            v-for="answer in selectedSubmission.answers || []"
-            v-else
-            :key="answer.field"
-            class="space-y-1"
-          >
-            <p class="font-medium text-gray-90">{{ fieldLabel(answer.field) }}</p>
-
-            <p v-if="isFileField(answer.field)">
-              <a
-                v-if="answerFileMeta(answer)?.downloadUrl"
-                :href="answerFileMeta(answer).downloadUrl"
-                class="text-primary underline"
-                rel="noopener"
-                target="_blank"
-              >
-                {{ t("Download file") }}: {{ answerFileMeta(answer).title }}
-              </a>
-              <span
-                v-else
-                class="text-gray-50"
-                v-text="t('No file attached')"
-              />
-            </p>
-
-            <p
-              v-else
-              class="text-gray-90 whitespace-pre-wrap"
-              v-text="formatAnswerValue(answer)"
-            />
-          </div>
-        </div>
-
-        <BaseInputNumber
-          v-if="assignment.evaluationMode === HOMEWORK_ASSIGNMENT_EVALUATION_SCORE"
-          id="homework-score"
-          v-model="scoreInput"
-          :label="t('Score')"
-          :min="0"
-        />
-
-        <BaseTextArea
-          v-if="assignment.evaluationMode !== HOMEWORK_ASSIGNMENT_EVALUATION_NONE"
-          id="homework-feedback"
-          v-model="feedbackInput"
-          :label="t('Feedback')"
-        />
-
-        <div class="flex justify-end">
-          <BaseButton
-            :is-loading="isSaving"
-            :label="t('Save')"
-            icon="save"
-            type="primary"
-            @click="saveGrade"
-          />
-        </div>
-      </div>
     </template>
   </div>
 </template>
@@ -185,31 +203,28 @@ import { useI18n } from "vue-i18n"
 import Column from "primevue/column"
 import homeworkAssignmentService from "../../services/chomeworkassignment"
 import homeworkSubmissionService from "../../services/chomeworksubmission"
-import homeworkFormService from "../../services/chomeworkform"
-import documentsService from "../../services/documents"
+import homeworkAssignmentProgressService from "../../services/homeworkassignmentprogress"
+import homeworkAssignmentEvaluationService from "../../services/chomeworkassignmentevaluation"
 import userService from "../../services/userService"
 import { useFormatDate } from "../../composables/formatDate"
 import { useNotification } from "../../composables/notification"
+import { getCourseContext } from "../../utils/courseContext"
+import { buildSubmissionExportUrl } from "../../utils/homeworkSubmissionExport"
+import { RESOURCE_LINK_PUBLISHED } from "../../constants/entity/resourcelink"
 import BaseButton from "../../components/basecomponents/BaseButton.vue"
 import BaseTable from "../../components/basecomponents/BaseTable.vue"
 import BaseSelect from "../../components/basecomponents/BaseSelect.vue"
 import BaseInputNumber from "../../components/basecomponents/BaseInputNumber.vue"
-import BaseTextArea from "../../components/basecomponents/BaseTextArea.vue"
+import BaseTinyEditor from "../../components/basecomponents/BaseTinyEditor.vue"
 import {
   HOMEWORK_ASSIGNMENT_EVALUATION_NONE,
   HOMEWORK_ASSIGNMENT_EVALUATION_SCORE,
-  HOMEWORK_ASSIGNMENT_TYPE_FILE,
-  HOMEWORK_ASSIGNMENT_TYPE_FORM,
 } from "../../constants/entity/chomeworkassignment"
 import {
   HOMEWORK_SUBMISSION_STATUS_DRAFT,
   HOMEWORK_SUBMISSION_STATUS_SUBMITTED,
   HOMEWORK_SUBMISSION_STATUS_LATE,
 } from "../../constants/entity/chomeworksubmission"
-import {
-  HOMEWORK_FORM_FIELD_TYPE_CHECKBOX,
-  HOMEWORK_FORM_FIELD_TYPE_FILE,
-} from "../../constants/entity/chomeworkformfield"
 
 const { t } = useI18n()
 const route = useRoute()
@@ -221,37 +236,65 @@ const assignmentId = Number(route.params.assignmentId)
 
 const isLoading = ref(true)
 const isLoadingSubmissions = ref(false)
-const isFormLoading = ref(false)
-const isSaving = ref(false)
 
 const assignment = ref(null)
-const form = ref(null)
 const submissions = ref([])
 const totalRecords = ref(0)
 
 // Server-side pagination state (see loadSubmissions()) - a course can have
 // far more than API Platform's default 30-item page size worth of
 // submissions, so the list must never be fetched/filtered as if it were
-// complete without paging through it.
+// complete without paging through it. Initialized from the URL (see
+// syncFiltersToUrl() below) so returning from HomeworkGradeSubmission via the
+// browser Back button restores exactly where the teacher left off, instead
+// of resetting to page 1 - BaseTable only applies its own platform-default
+// itemsPerPage when this starts out null (see BaseTable.vue's
+// `if (rows.value == null) rows.value = initialRows()`), so a real value
+// from the URL is respected, not overridden.
 const loadParams = reactive({
-  page: 1,
-  itemsPerPage: null,
+  page: route.query.page ? Number(route.query.page) : 1,
+  itemsPerPage: route.query.itemsPerPage ? Number(route.query.itemsPerPage) : null,
 })
 
 // "" = all statuses; otherwise one of HOMEWORK_SUBMISSION_STATUS_*. Applied
 // server-side (CHomeworkSubmission's "status" SearchFilter), not client-side,
 // so it always reflects the full result set rather than just the current page.
-const statusFilter = ref("")
+// Initialized from the URL for the same reason as loadParams above.
+const statusFilter = ref(route.query.status ? Number(route.query.status) : "")
 
-const selectedSubmission = ref(null)
-const scoreInput = ref(null)
-const feedbackInput = ref("")
+// PrimeVue numeric convention: -1 = desc (default: most recent first), 1 = asc.
+const sortOrderValue = ref("asc" === route.query.sortOrder ? 1 : -1)
 
-// userIri -> display name, documentIri -> {title, downloadUrl}, fieldIri -> field object.
-// Plain reactive caches, same pattern as HomeworkSubmit.vue's docMeta/answersByFieldIri.
+// "" = all students; otherwise a user IRI. Applied server-side (the new
+// "user" SearchFilter). Options are sourced from a dedicated unpaginated
+// fetch (studentFilterOptions/loadStudentFilterOptions below), NOT from the
+// paginated `submissions` used to drive the table - that list only ever
+// holds one page's worth of rows, which would silently omit students on
+// other pages.
+const studentFilter = ref("string" === typeof route.query.user ? route.query.user : "")
+const studentFilterOptions = ref([{ label: t("All"), value: "" }])
+
+// Multi-report assignments only (see the "Progress overview" block).
+const progressRows = ref([])
+// userIri -> CHomeworkAssignmentEvaluation, populated by loadProgress().
+const evaluationsByUserIri = reactive({})
+const selectedProgressUserId = ref(null)
+const evaluationScoreInput = ref(null)
+const evaluationFeedbackInput = ref("")
+
+// Compact Tiny config for a short feedback field (no file manager, no
+// full-page toolbar needed) - mirrors DropboxFeedbackDialog.vue's tinyConfig.
+const feedbackEditorConfig = {
+  height: 200,
+  menubar: false,
+  statusbar: false,
+  toolbar: "bold italic underline | bullist numlist | link unlink | removeformat",
+}
+const isSavingEvaluation = ref(false)
+
+// userIri -> display name. Plain reactive cache, same pattern as
+// HomeworkSubmit.vue's docMeta/answersByFieldIri.
 const userNames = reactive({})
-const docMeta = reactive({})
-const fieldsByIri = reactive({})
 
 const statusFilterOptions = computed(() => [
   { label: t("All"), value: "" },
@@ -260,17 +303,63 @@ const statusFilterOptions = computed(() => [
   { label: t("Late"), value: HOMEWORK_SUBMISSION_STATUS_LATE },
 ])
 
-const selectedSubmissionDocumentIri = computed(() => resolveIri(selectedSubmission.value?.document))
-const selectedDocumentMeta = computed(() =>
-  selectedSubmissionDocumentIri.value ? docMeta[selectedSubmissionDocumentIri.value] : null,
-)
+// Downloading a draft has little value - it may have no (complete) content
+// yet, same reasoning HomeworkGradeSubmission.vue's own content rendering
+// already relies on submission status for.
+function canDownload(submission) {
+  return HOMEWORK_SUBMISSION_STATUS_SUBMITTED === submission.status || HOMEWORK_SUBMISSION_STATUS_LATE === submission.status
+}
+
+// A plain click handler via window.open(), NOT BaseButton's :to-url prop:
+// :to-url renders through PrimeVue's <Button as-child>, whose "asChild"
+// template branch is a bare `<slot :class="..." :a11yAttrs="..." />` with no
+// `v-bind="$attrs"` at all (see node_modules/primevue/button/Button.vue) -
+// any extra attribute placed on BaseButton (target/rel/download) is silently
+// dropped before it ever reaches the real <a> BaseAppLink renders. Confirmed
+// live: none of target="_blank", rel="noopener", or the download attribute
+// had any effect through that path. window.open() sidesteps the whole chain.
+function downloadSubmission(submission) {
+  window.open(buildSubmissionExportUrl(submission), "_blank", "noopener")
+}
+
+// Keeps status/user/sortOrder/page/itemsPerPage in this page's own URL, so:
+// (1) the browser Back button from HomeworkGradeSubmission restores exactly
+// this filtered/sorted/paginated view instead of resetting it (there was no
+// real navigation away before this page existed, so this never mattered
+// until now), and (2) HomeworkGradeSubmission's own Previous/Next can be fed
+// the exact same filter/sort via route.query, forwarded unchanged.
+function syncFiltersToUrl() {
+  router.replace({
+    query: {
+      ...route.query,
+      status: statusFilter.value || undefined,
+      user: studentFilter.value || undefined,
+      sortOrder: -1 === sortOrderValue.value ? undefined : "asc",
+      page: 1 === loadParams.page ? undefined : loadParams.page,
+      itemsPerPage: loadParams.itemsPerPage || undefined,
+    },
+  })
+}
+
+function goToGradeSubmission(submission) {
+  router.push({
+    name: "HomeworkGradeSubmission",
+    params: {
+      node: route.params.node,
+      assignmentId,
+      submissionId: extractIidFromIri(submission["@id"]),
+    },
+    query: route.query,
+  })
+}
 
 onMounted(async () => {
   try {
     assignment.value = await homeworkAssignmentService.getAssignment(assignmentId)
+    await loadStudentFilterOptions()
 
-    if (assignment.value.submissionType === HOMEWORK_ASSIGNMENT_TYPE_FORM) {
-      await loadForm()
+    if (assignment.value.allowMultipleSubmissions) {
+      await loadProgress()
     }
   } catch (error) {
     showErrorNotification(error)
@@ -290,6 +379,7 @@ watch(
   loadParams,
   () => {
     if (!loadParams.itemsPerPage) return
+    syncFiltersToUrl()
     loadSubmissions()
   },
   { deep: true, immediate: true },
@@ -303,25 +393,75 @@ watch(statusFilter, () => {
   if (loadParams.itemsPerPage) loadSubmissions()
 })
 
+// A sort change must also restart pagination from page 1, for the same
+// reason as the status filter above.
+watch(sortOrderValue, () => {
+  loadParams.page = 1
+  if (loadParams.itemsPerPage) loadSubmissions()
+})
+
+// Same reasoning as the statusFilter watcher above: reusing the current page
+// against a differently-filtered result set would show the wrong slice.
+watch(studentFilter, () => {
+  loadParams.page = 1
+  if (loadParams.itemsPerPage) loadSubmissions()
+})
+
 async function loadSubmissions() {
   isLoadingSubmissions.value = true
   try {
-    // Server-side pagination + server-side status filter (CHomeworkSubmission's
-    // "status" SearchFilter) - CHomeworkSubmissionExtension (backend) already
-    // scopes the underlying query to "course-wide teacher" via
-    // HomeworkCourseTeacherChecker, so no client-side session filtering is
-    // added here (it would defeat the module's cross-session grading
-    // requirement); only pagination/status are handled server-side.
+    // Server-side pagination + server-side status/user filters
+    // (CHomeworkSubmission's "status"/"user" SearchFilters) -
+    // CHomeworkSubmissionExtension (backend) already scopes the underlying
+    // query to "course-wide teacher" via HomeworkCourseTeacherChecker, so no
+    // client-side session filtering is added here (it would defeat the
+    // module's cross-session grading requirement); only pagination/status/user
+    // are handled server-side.
     const { items, totalItems } = await homeworkSubmissionService.listSubmissionsForAssignment(assignmentId, {
       page: loadParams.page,
       itemsPerPage: loadParams.itemsPerPage,
       status: statusFilter.value,
+      sortOrder: -1 === sortOrderValue.value ? "desc" : "asc",
+      user: studentFilter.value,
     })
     submissions.value = items
     totalRecords.value = totalItems
     await Promise.all(items.map((item) => loadUserName(item.user)))
   } finally {
     isLoadingSubmissions.value = false
+  }
+}
+
+// Dedicated, unpaginated (itemsPerPage: 9999) fetch used ONLY to populate the
+// student filter dropdown's options - kept fully separate from
+// submissions/loadSubmissions() (the paginated data driving the table) so
+// neither interferes with the other: this fetch must see every student
+// across every page, while the table must stay paginated.
+// Known scalability tradeoff, accepted deliberately (see
+// docs/superpowers/specs/2026-09-28-homework-round4-design.md, section 5):
+// fetches the assignment's FULL unpaginated submission collection just to
+// build the distinct-student dropdown, then resolves each distinct student's
+// name individually (no batch-by-IRI endpoint exists in userService.js).
+// For an allowMultipleSubmissions assignment with hundreds of rows across
+// many students, this is a real network cost on every mount of this view -
+// revisit with a dedicated backend "distinct students for this assignment"
+// endpoint (or partial serialization) if this becomes slow in practice.
+async function loadStudentFilterOptions() {
+  try {
+    const { items } = await homeworkSubmissionService.listSubmissionsForAssignment(assignmentId, { itemsPerPage: 9999 })
+    await Promise.all(items.map((item) => loadUserName(item.user)))
+
+    const seen = new Set()
+    const options = [{ label: t("All"), value: "" }]
+    items.forEach((item) => {
+      const iri = resolveIri(item.user)
+      if (!iri || seen.has(iri)) return
+      seen.add(iri)
+      options.push({ label: userNames[iri] || iri, value: iri })
+    })
+    studentFilterOptions.value = options
+  } catch (error) {
+    showErrorNotification(error)
   }
 }
 
@@ -346,35 +486,6 @@ function studentName(submission) {
   return (iri ? userNames[iri] : null) || "…"
 }
 
-async function loadForm() {
-  const formIri = resolveIri(assignment.value?.form)
-  if (!formIri) return
-
-  isFormLoading.value = true
-  try {
-    form.value = await homeworkFormService.getForm(extractIidFromIri(formIri))
-    // CHomeworkFormField has no direct Get endpoint (NotFoundAction), so
-    // labels/types can only be resolved via the parent form's embedded
-    // pages/fields - same reasoning as HomeworkSubmit.vue's `allFields`.
-    ;(form.value.pages || []).forEach((page) => {
-      ;(page.fields || []).forEach((field) => {
-        fieldsByIri[field["@id"]] = field
-      })
-    })
-  } finally {
-    isFormLoading.value = false
-  }
-}
-
-async function loadDocMeta(iri) {
-  if (!iri || docMeta[iri]) return
-  try {
-    docMeta[iri] = await documentsService.getDocumentByIri(iri)
-  } catch (error) {
-    console.error("[HomeworkCorrectAndRate] Failed to load document metadata", error)
-  }
-}
-
 function resolveIri(value) {
   if (!value) return null
   return "string" === typeof value ? value : value["@id"] || null
@@ -390,69 +501,77 @@ function statusLabel(status) {
   return t("Draft")
 }
 
-function fieldLabel(fieldIri) {
-  return fieldsByIri[fieldIri]?.label || fieldIri
+// Multi-report assignments: per-student on-time/total report counts (the
+// teacher-facing progress table) plus the existing final evaluations, so the
+// "Edit"/"Add final evaluation" button label reflects whether one already
+// exists.
+async function loadProgress() {
+  const { items: progress } = await homeworkAssignmentProgressService.getProgress(assignmentId)
+  progressRows.value = progress
+
+  const { items: evaluations } = await homeworkAssignmentEvaluationService.listEvaluationsForAssignment(assignmentId)
+  Object.keys(evaluationsByUserIri).forEach((key) => delete evaluationsByUserIri[key])
+  evaluations.forEach((evaluation) => {
+    evaluationsByUserIri[evaluation.user] = evaluation
+  })
 }
 
-function isFileField(fieldIri) {
-  return fieldsByIri[fieldIri]?.type === HOMEWORK_FORM_FIELD_TYPE_FILE
+function evaluationForUserId(userId) {
+  return evaluationsByUserIri[`/api/users/${userId}`] || null
 }
 
-function isCheckboxField(fieldIri) {
-  return fieldsByIri[fieldIri]?.type === HOMEWORK_FORM_FIELD_TYPE_CHECKBOX
+function selectProgressRow(row) {
+  selectedProgressUserId.value = row.userId
+  const existing = evaluationForUserId(row.userId)
+  evaluationScoreInput.value = existing?.score ?? null
+  evaluationFeedbackInput.value = existing?.feedback ?? ""
 }
 
-function answerFileMeta(answer) {
-  const iri = resolveIri(answer.fileDocument)
-  return iri ? docMeta[iri] : null
-}
+async function saveFinalEvaluation() {
+  if (null === selectedProgressUserId.value || isSavingEvaluation.value) return
 
-function formatAnswerValue(answer) {
-  if (isCheckboxField(answer.field)) {
-    try {
-      const parsed = JSON.parse(answer.value || "[]")
-      return Array.isArray(parsed) ? parsed.join(", ") : answer.value || "—"
-    } catch {
-      return answer.value || "—"
-    }
-  }
-  return answer.value || "—"
-}
-
-async function selectSubmission(submission) {
-  selectedSubmission.value = submission
-  scoreInput.value = submission.score ?? null
-  feedbackInput.value = submission.feedback ?? ""
-
-  if (assignment.value?.submissionType === HOMEWORK_ASSIGNMENT_TYPE_FILE) {
-    const docIri = resolveIri(submission.document)
-    if (docIri) await loadDocMeta(docIri)
-  } else {
-    await Promise.all(
-      (submission.answers || [])
-        .filter((answer) => answer.fileDocument)
-        .map((answer) => loadDocMeta(resolveIri(answer.fileDocument))),
-    )
-  }
-}
-
-async function saveGrade() {
-  if (!selectedSubmission.value || isSaving.value) return
-
-  isSaving.value = true
+  isSavingEvaluation.value = true
   try {
-    const id = extractIidFromIri(selectedSubmission.value["@id"])
-    const result = await homeworkSubmissionService.grade(id, scoreInput.value, feedbackInput.value)
+    const userIri = `/api/users/${selectedProgressUserId.value}`
+    const existing = evaluationsByUserIri[userIri]
+    let result
 
-    const index = submissions.value.findIndex((item) => item["@id"] === selectedSubmission.value["@id"])
-    if (index !== -1) submissions.value[index] = result
+    if (existing) {
+      result = await homeworkAssignmentEvaluationService.updateEvaluation(
+        extractIidFromIri(existing["@id"]),
+        evaluationScoreInput.value,
+        evaluationFeedbackInput.value,
+      )
+    } else {
+      const { cid, sid } = getCourseContext()
+      // Deliberately a USER-scoped link (uid = the EVALUATED student, not the
+      // teacher saving this) - see chomeworkassignmentevaluation.js's
+      // createEvaluation() docblock and HomeworkSubmit.vue's
+      // loadOrCreateSubmission() for why this exact resourceLinkList shape
+      // is required for privacy scoping.
+      result = await homeworkAssignmentEvaluationService.createEvaluation({
+        assignment: assignment.value["@id"],
+        user: userIri,
+        score: evaluationScoreInput.value,
+        feedback: evaluationFeedbackInput.value,
+        parentResourceNodeId: Number(route.params.node),
+        resourceLinkList: [
+          {
+            cid,
+            ...(sid ? { sid } : {}),
+            visibility: RESOURCE_LINK_PUBLISHED,
+            uid: selectedProgressUserId.value,
+          },
+        ],
+      })
+    }
 
-    selectedSubmission.value = result
-    showSuccessNotification(t("Grade saved"))
+    evaluationsByUserIri[userIri] = result
+    showSuccessNotification(t("Final evaluation saved"))
   } catch (error) {
     showErrorNotification(error)
   } finally {
-    isSaving.value = false
+    isSavingEvaluation.value = false
   }
 }
 

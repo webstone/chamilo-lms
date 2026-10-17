@@ -11,6 +11,12 @@
 
     <h3 v-text="isEditMode ? t('Edit form') : t('New form')" />
 
+    <p
+      v-if="isEditMode && creatorFullName"
+      class="text-gray-60"
+      v-text="t('Created by {0} on {1}', [creatorFullName, abbreviatedDatetime(createdAt)])"
+    />
+
     <BaseInputText
       id="homework-form-title"
       v-model="title"
@@ -21,7 +27,7 @@
     />
 
     <div
-      v-if="isEditMode"
+      v-if="requiresDataLossAcknowledgement"
       class="border-2 border-danger bg-support-6 text-danger rounded-lg p-3 space-y-2"
     >
       <p
@@ -305,7 +311,7 @@
         @click="goBack"
       />
       <BaseButton
-        :disabled="isSaving || isLoading || (isEditMode && !acknowledgedDataLoss)"
+        :disabled="isSaving || isLoading || (requiresDataLossAcknowledgement && !acknowledgedDataLoss)"
         :is-loading="isSaving"
         :label="t('Save')"
         icon="save"
@@ -329,6 +335,7 @@ import BaseInputNumber from "../../components/basecomponents/BaseInputNumber.vue
 import BaseInputText from "../../components/basecomponents/BaseInputText.vue"
 import BaseTextArea from "../../components/basecomponents/BaseTextArea.vue"
 import homeworkFormService from "../../services/chomeworkform"
+import { useFormatDate } from "../../composables/formatDate"
 import { useNotification } from "../../composables/notification"
 import { getCourseContext } from "../../utils/courseContext"
 import { RESOURCE_LINK_PUBLISHED } from "../../constants/entity/resourcelink"
@@ -347,6 +354,7 @@ const route = useRoute()
 const router = useRouter()
 const { cid, sid, gid } = getCourseContext()
 const { showSuccessNotification, showErrorNotification } = useNotification()
+const { abbreviatedDatetime } = useFormatDate()
 
 // The builder is reached from HomeworkAssignmentForm.vue's "Create new form"
 // button (assets/vue/components/homework/HomeworkAssignmentForm.vue,
@@ -360,7 +368,7 @@ const { showSuccessNotification, showErrorNotification } = useNotification()
 // route table): navigation always goes through router.push({name}) so this
 // was never an open redirect, but there's no reason for this homework-module
 // screen to be able to bounce to an arbitrary named route elsewhere in the app.
-const RETURN_ROUTE_ALLOW_LIST = ["HomeworkAssignmentCreate", "HomeworkList"]
+const RETURN_ROUTE_ALLOW_LIST = ["HomeworkAssignmentCreate", "HomeworkAssignmentEdit", "HomeworkList"]
 
 const returnRouteName = computed(() => {
   const candidate = route.query.returnTo
@@ -369,6 +377,14 @@ const returnRouteName = computed(() => {
 
 const formId = computed(() => (route.params.formId ? Number(route.params.formId) : null))
 const isEditMode = computed(() => formId.value !== null)
+
+// Set by HomeworkAssignmentForm.vue right after creating a brand new form
+// (blank, or via "Duplicate form") and navigating straight here to fill it
+// in - that form cannot possibly have any submissions against it yet, so the
+// destructive-edit warning below (aimed at re-opening an OLD, possibly
+// already-used form) would only be noise here.
+const justCreated = computed(() => "1" === route.query.justCreated)
+const requiresDataLossAcknowledgement = computed(() => isEditMode.value && !justCreated.value)
 
 const fieldTypes = ref([
   { type: HOMEWORK_FORM_FIELD_TYPE_TEXT, label: t("Text"), icon: "file-text" },
@@ -429,6 +445,8 @@ function hasValidOptions(field) {
 }
 
 const title = ref("")
+const creatorFullName = ref("")
+const createdAt = ref(null)
 const pages = ref([])
 const activePageKey = ref(null)
 const activePage = computed(() => pages.value.find((page) => page._key === activePageKey.value) ?? null)
@@ -511,6 +529,8 @@ onMounted(async () => {
   try {
     const data = await homeworkFormService.getForm(formId.value)
     title.value = data.title || ""
+    creatorFullName.value = data.creatorFullName || ""
+    createdAt.value = data.createdAt || null
     pages.value = (data.pages || []).map((page) => ({
       _key: nextUid(),
       title: page.title || "",
@@ -608,7 +628,7 @@ async function onSubmit() {
 
   // Defense in depth: the Save button is already disabled until this is
   // checked, but guard here too in case that ever changes.
-  if (isEditMode.value && !acknowledgedDataLoss.value) {
+  if (requiresDataLossAcknowledgement.value && !acknowledgedDataLoss.value) {
     showErrorNotification(t("Please confirm the data-loss warning before saving."))
     return
   }
@@ -633,9 +653,18 @@ async function onSubmit() {
 }
 
 function goBack() {
+  const params = { node: route.params.node }
+
+  // HomeworkAssignmentEdit's route requires :assignmentId - carried through
+  // via returnAssignmentId since the builder's own route doesn't have that
+  // param (see goToFormBuilder()/goToEditForm() in HomeworkAssignmentForm.vue).
+  if ("HomeworkAssignmentEdit" === returnRouteName.value && route.query.returnAssignmentId) {
+    params.assignmentId = route.query.returnAssignmentId
+  }
+
   router.push({
     name: returnRouteName.value,
-    params: { node: route.params.node },
+    params,
     query: { cid, sid, gid },
   })
 }

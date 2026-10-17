@@ -47,6 +47,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new GetCollection(
             security: "is_granted('ROLE_CURRENT_COURSE_STUDENT') or is_granted('ROLE_CURRENT_COURSE_SESSION_STUDENT')",
+            filters: [CidFilter::class],
         ),
         new Post(
             security: "is_granted('ROLE_CURRENT_COURSE_TEACHER') or is_granted('ROLE_CURRENT_COURSE_SESSION_TEACHER')",
@@ -69,7 +70,17 @@ use Symfony\Component\Validator\Constraints as Assert;
     order: ['deadline' => 'DESC'],
 )]
 #[ApiFilter(OrderFilter::class, properties: ['title', 'opensOn', 'deadline' => ['nulls_comparison' => OrderFilterInterface::NULLS_SMALLEST]])]
-#[ApiFilter(filterClass: CidFilter::class)]
+// CidFilter is attached to GetCollection only (see its filters: param above),
+// not class-wide: a class-level #[ApiFilter] makes CidFilter's required:true
+// schema apply to EVERY operation via ParameterValidator, including the
+// item Get - which never actually runs the filter's query-building logic
+// (AbstractFilter only fires for collections) but was still rejecting a
+// cid-less item Get with a 500 "Query parameter cid is required" before
+// HomeworkVoter's own object-level grant (which needs no cid at all - it
+// resolves the course from the assignment's own resource links) ever got a
+// chance to run. Confirmed live: this is exactly what blocked a cross-session
+// teacher fetching an assignment by id alone (see
+// testTeacherOfSessionACanViewAssignmentFromSessionB).
 // Deliberately NO SidFilter here - session-aware collection scoping (session
 // match OR whole-course, with a course-wide-teacher bypass) is hand-implemented
 // in CHomeworkAssignmentExtension instead. See that class's docblock for why:
@@ -85,6 +96,10 @@ use Symfony\Component\Validator\Constraints as Assert;
 // filter's removal: CidReqListener validates it at kernel.request time,
 // before any API Platform filter/extension ever runs (cid is a required query
 // parameter on this resource, so that validation branch always executes).
+#[Assert\Expression(
+    "this.isAllowMultipleSubmissions() === false or this.getRequiredSubmissionCount() !== null",
+    message: 'Required submission count must be set when multiple submissions are allowed.',
+)]
 class CHomeworkAssignment extends AbstractResource implements ResourceInterface, Stringable
 {
     public const TYPE_FILE = 1;
@@ -165,6 +180,15 @@ class CHomeworkAssignment extends AbstractResource implements ResourceInterface,
     #[ORM\Column(name: 'event_calendar_id', type: 'integer', nullable: false)]
     #[Groups(['homework_assignment:item:get'])]
     protected int $eventCalendarId = 0;
+
+    #[ORM\Column(name: 'allow_multiple_submissions', type: 'boolean', nullable: false)]
+    #[Groups(['homework_assignment:write', 'homework_assignment:read'])]
+    protected bool $allowMultipleSubmissions = false;
+
+    #[Assert\Positive]
+    #[ORM\Column(name: 'required_submission_count', type: 'integer', nullable: true)]
+    #[Groups(['homework_assignment:write', 'homework_assignment:read'])]
+    protected ?int $requiredSubmissionCount = null;
 
     public function __toString(): string
     {
@@ -362,6 +386,30 @@ class CHomeworkAssignment extends AbstractResource implements ResourceInterface,
     public function setEventCalendarId(int $eventCalendarId): self
     {
         $this->eventCalendarId = $eventCalendarId;
+
+        return $this;
+    }
+
+    public function isAllowMultipleSubmissions(): bool
+    {
+        return $this->allowMultipleSubmissions;
+    }
+
+    public function setAllowMultipleSubmissions(bool $allowMultipleSubmissions): self
+    {
+        $this->allowMultipleSubmissions = $allowMultipleSubmissions;
+
+        return $this;
+    }
+
+    public function getRequiredSubmissionCount(): ?int
+    {
+        return $this->requiredSubmissionCount;
+    }
+
+    public function setRequiredSubmissionCount(?int $requiredSubmissionCount): self
+    {
+        $this->requiredSubmissionCount = $requiredSubmissionCount;
 
         return $this;
     }

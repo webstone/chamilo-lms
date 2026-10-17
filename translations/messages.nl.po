@@ -34009,8 +34009,23 @@ msgstr "<p><img src=\"/img/document/images/mr_chamilo/svg/collaborative.svg\" wi
 msgid "New feedback for your submission \"%s\""
 msgstr "Nieuwe feedback voor je indiening \"%s\""
 
+msgid "No file was submitted for this report."
+msgstr "Er werd geen bestand ingediend voor dit verslag."
+
+msgid "Attachment: %s"
+msgstr "Bijlage: %s"
+
+msgid "No attachment"
+msgstr "Geen bijlage"
+
+msgid "%s (copy)"
+msgstr "%s (kopie)"
+
 msgid "Hello %name%, there is a new comment on your assignment submission \"%title%\". Please review it in the platform."
 msgstr "Hallo %name%, er is nieuwe feedback op je indiening \"%title%\". Bekijk dit op het platform."
 
 msgid "Hello %name%, there is a new comment on your assignment submission \"%title%\". <a href=\"%link%\">Review it in the platform</a>."
 msgstr "Hallo %name%, er is nieuwe feedback op je indiening \"%title%\". <a href=\"%link%\">Bekijk het op het platform</a>."
+
+msgid "Homework deadline: %s"
+msgstr "Verslagdeadline: %s"

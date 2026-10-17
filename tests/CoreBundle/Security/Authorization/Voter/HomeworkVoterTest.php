@@ -13,6 +13,7 @@ use Chamilo\CoreBundle\Entity\User;
 use Chamilo\CoreBundle\Security\Authorization\Voter\HomeworkVoter;
 use Chamilo\CoreBundle\Security\HomeworkCourseTeacherChecker;
 use Chamilo\CourseBundle\Entity\CHomeworkAssignment;
+use Chamilo\CourseBundle\Entity\CHomeworkAssignmentEvaluation;
 use Chamilo\CourseBundle\Entity\CHomeworkForm;
 use Chamilo\CourseBundle\Entity\CHomeworkSubmission;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -126,6 +127,34 @@ final class HomeworkVoterTest extends TestCase
         $token->method('getUser')->willReturn($user);
 
         $result = $voter->vote($token, $submission, ['EDIT']);
+
+        $this->assertSame(VoterInterface::ACCESS_GRANTED, $result);
+    }
+
+    public function testGrantsEditForCHomeworkAssignmentEvaluationByResolvingCourseFromItsAssignment(): void
+    {
+        $user = $this->createMock(User::class);
+        $course = new Course();
+        $assignment = $this->assignmentLinkedToCourse($course);
+
+        // Same shape as the CHomeworkSubmission case above: the evaluation
+        // itself carries no course-linked ResourceNode of its own -
+        // resolveCourse() must walk its assignment instead.
+        $evaluation = new CHomeworkAssignmentEvaluation();
+        $evaluation->setAssignment($assignment);
+
+        $checker = $this->createMock(HomeworkCourseTeacherChecker::class);
+        $checker->expects($this->once())
+            ->method('isTeacherOfCourse')
+            ->with($user, $course)
+            ->willReturn(true);
+
+        $voter = new HomeworkVoter($checker);
+
+        $token = $this->createMock(TokenInterface::class);
+        $token->method('getUser')->willReturn($user);
+
+        $result = $voter->vote($token, $evaluation, ['EDIT']);
 
         $this->assertSame(VoterInterface::ACCESS_GRANTED, $result);
     }

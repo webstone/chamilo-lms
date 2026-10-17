@@ -13,10 +13,12 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use Chamilo\CoreBundle\Controller\Api\DuplicateHomeworkFormAction;
 use Chamilo\CoreBundle\Entity\AbstractResource;
 use Chamilo\CoreBundle\Entity\ResourceInterface;
 use Chamilo\CoreBundle\Filter\CidFilter;
 use Chamilo\CourseBundle\Repository\CHomeworkFormRepository;
+use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -36,6 +38,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Get(security: "is_granted('VIEW', object.resourceNode) or is_granted('VIEW', object)"),
         new GetCollection(
             security: "is_granted('ROLE_CURRENT_COURSE_STUDENT') or is_granted('ROLE_CURRENT_COURSE_SESSION_STUDENT')",
+            filters: [CidFilter::class],
         ),
         new Post(
             security: "is_granted('ROLE_CURRENT_COURSE_TEACHER') or is_granted('ROLE_CURRENT_COURSE_SESSION_TEACHER')",
@@ -45,11 +48,31 @@ use Symfony\Component\Validator\Constraints as Assert;
         // the Huiswerk spec has no "can delete but not edit" role, so
         // course-wide teacher rights cover deletion too.
         new Delete(security: "is_granted('DELETE', object.resourceNode) or is_granted('EDIT', object)"),
+        // Same EDIT requirement as Put - duplicating is offered as the safe
+        // alternative to PUT's destructive full-replace, so it needs the same
+        // rights as editing the original would. `read: true` resolves {id} to
+        // the ORIGINAL form as `object`/$data (checked by the security
+        // expression and passed into the controller); `deserialize: false`
+        // because the request has no body to denormalize - the new form's
+        // title/pages/fields are all derived from the original inside
+        // DuplicateHomeworkFormAction, never from client input.
+        new Post(
+            uriTemplate: '/c_homework_forms/{id}/duplicate',
+            name: 'homework_form_duplicate',
+            controller: DuplicateHomeworkFormAction::class,
+            security: "is_granted('EDIT', object.resourceNode) or is_granted('EDIT', object)",
+            read: true,
+            deserialize: false,
+        ),
     ],
     normalizationContext: ['groups' => ['homework_form:read']],
     denormalizationContext: ['groups' => ['homework_form:write']],
 )]
-#[ApiFilter(filterClass: CidFilter::class)]
+// CidFilter is attached to GetCollection only (see its filters: param above),
+// not class-wide - see CHomeworkAssignment's equivalent note for why a
+// class-level #[ApiFilter] here made the item Get (and this class's own
+// duplicate Post, which also resolves {id}) reject a cid-less request with a
+// 500 before HomeworkVoter's object-level grant ever got a chance to run.
 // Deliberately NO SidFilter here - see CHomeworkFormExtension's docblock:
 // SidFilter's unconditional `resource_links.session = :sid` restriction had
 // no course-wide-teacher bypass, blocking the cross-session teacher
@@ -110,6 +133,24 @@ class CHomeworkForm extends AbstractResource implements ResourceInterface, Strin
         $this->title = $title;
 
         return $this;
+    }
+
+    /**
+     * Flat string, not the full User object - the frontend only ever
+     * displays this as text and never links to or acts on the creator (see
+     * docs/superpowers/specs/2026-09-28-homework-round4-design.md, section 1
+     * for why this isn't just the shared resource_node:read group instead).
+     */
+    #[Groups(['homework_form:read'])]
+    public function getCreatorFullName(): ?string
+    {
+        return $this->getResourceNode()?->getCreator()?->getFullName();
+    }
+
+    #[Groups(['homework_form:read'])]
+    public function getCreatedAt(): ?DateTime
+    {
+        return $this->getResourceNode()?->getCreatedAt();
     }
 
     /**

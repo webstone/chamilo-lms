@@ -32,10 +32,16 @@ async function updateForm(id, payload) {
   return baseService.put(`/api/c_homework_forms/${id}`, payload, { params: buildCidParams() })
 }
 
+/** Deep-copies a homework form (title, pages, fields) into a brand new one. */
+async function duplicateForm(id) {
+  return baseService.post(`/api/c_homework_forms/${id}/duplicate`, {})
+}
+
 export default {
   ...makeService("c_homework_forms"),
   listForms,
   getForm,
   createForm,
   updateForm,
+  duplicateForm,
 }

@@ -12,6 +12,7 @@ use Chamilo\CoreBundle\Entity\Usergroup;
 use Chamilo\CourseBundle\Entity\CCalendarEvent;
 use Chamilo\CourseBundle\Entity\CGroup;
 use Chamilo\CourseBundle\Entity\CHomeworkAssignment;
+use Chamilo\CourseBundle\Entity\CHomeworkAssignmentEvaluation;
 use Chamilo\CourseBundle\Entity\CHomeworkForm;
 use Chamilo\CourseBundle\Entity\CHomeworkSubmission;
 use Symfony\Component\Security\Acl\Permission\MaskBuilder;
@@ -73,7 +74,9 @@ class ResourceVoter extends Voter
         // UsergroupVoter, HomeworkVoter). This voter must abstain on them so
         // it does not co-decide under the unanimous strategy.
         //
-        // The Homework* entities are a load-bearing case: their API Platform
+        // The Homework* entities (including CHomeworkAssignmentEvaluation,
+        // added for multi-report assignments) are a load-bearing case: their
+        // API Platform
         // operations declare security as
         // "is_granted(ATTR, object.resourceNode) or is_granted(ATTR, object)"
         // specifically so that HomeworkVoter's course-wide, cross-session
@@ -97,6 +100,7 @@ class ResourceVoter extends Voter
             || $subject instanceof CHomeworkAssignment
             || $subject instanceof CHomeworkForm
             || $subject instanceof CHomeworkSubmission
+            || $subject instanceof CHomeworkAssignmentEvaluation
         ) {
             return false;
         }

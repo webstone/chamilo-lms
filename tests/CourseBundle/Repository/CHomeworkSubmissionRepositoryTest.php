@@ -30,6 +30,7 @@ class CHomeworkSubmissionRepositoryTest extends AbstractApiTest
             ->setSubmissionType(CHomeworkAssignment::TYPE_FORM)
             ->setDeadline(new DateTime('+1 day'))
             ->setEvaluationMode(CHomeworkAssignment::EVALUATION_NONE)
+            ->setCreator($this->getUser('admin'))
         ;
         $assignment->setParent($course);
         $assignment->addCourseLink($course);
@@ -41,6 +42,7 @@ class CHomeworkSubmissionRepositoryTest extends AbstractApiTest
             ->setAssignment($assignment)
             ->setUser($student)
             ->setStatus(CHomeworkSubmission::STATUS_DRAFT)
+            ->setCreator($student)
         ;
         $submission->setParent($course);
         $submission->addCourseLink($course);
@@ -66,7 +68,7 @@ class CHomeworkSubmissionRepositoryTest extends AbstractApiTest
         $course = $this->createCourse('new');
         $em = $this->getEntityManager();
 
-        $form = (new CHomeworkForm())->setTitle('Lesverslag');
+        $form = (new CHomeworkForm())->setTitle('Lesverslag')->setCreator($this->getUser('admin'));
         $form->setParent($course);
         $form->addCourseLink($course);
 
@@ -88,6 +90,7 @@ class CHomeworkSubmissionRepositoryTest extends AbstractApiTest
             ->setDeadline(new DateTime('+1 day'))
             ->setEvaluationMode(CHomeworkAssignment::EVALUATION_NONE)
             ->setForm($form)
+            ->setCreator($this->getUser('admin'))
         ;
         $assignment->setParent($course);
         $assignment->addCourseLink($course);
@@ -99,6 +102,7 @@ class CHomeworkSubmissionRepositoryTest extends AbstractApiTest
             ->setAssignment($assignment)
             ->setUser($student)
             ->setStatus(CHomeworkSubmission::STATUS_DRAFT)
+            ->setCreator($student)
         ;
         $submission->setParent($course);
         $submission->addCourseLink($course);

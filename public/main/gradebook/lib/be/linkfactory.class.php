@@ -94,6 +94,8 @@ class LinkFactory
                 return new AttendanceLink();
             case LINK_SURVEY:
                 return new SurveyLink();
+            case LINK_HOMEWORK:
+                return new HomeworkLink();
         }
 
         return null;
@@ -116,6 +118,7 @@ class LinkFactory
             LINK_FORUM_THREAD,
             LINK_ATTENDANCE,
             LINK_SURVEY,
+            LINK_HOMEWORK,
         ];
     }
 

@@ -85,7 +85,16 @@ final class CHomeworkAssignmentPostStateProcessorTest extends AbstractApiTest
         $this->assertResponseIsSuccessful();
         $this->assertResponseStatusCodeSame(201);
 
-        $assignmentId = $response->toArray()['iid'];
+        // CHomeworkAssignment never exposes `iid` as a serialized property
+        // (no Groups on that field - it's the identifier, exposed only via
+        // the JSON-LD "@id" IRI). Fixed 2026-09-11: `->toArray()['iid']`
+        // always threw "Undefined array key" - this is the first time this
+        // test class actually ran to completion (previously blocked by the
+        // "test.service_container"/test-DB environment gap documented in
+        // this class's own docblock above), which is how this latent bug
+        // went undetected until now.
+        $responseData = $response->toArray();
+        $assignmentId = (int) \substr((string) $responseData['@id'], \strrpos((string) $responseData['@id'], '/') + 1);
 
         $em->clear();
 
@@ -140,7 +149,16 @@ final class CHomeworkAssignmentPostStateProcessorTest extends AbstractApiTest
         $this->assertResponseIsSuccessful();
         $this->assertResponseStatusCodeSame(201);
 
-        $assignmentId = $response->toArray()['iid'];
+        // CHomeworkAssignment never exposes `iid` as a serialized property
+        // (no Groups on that field - it's the identifier, exposed only via
+        // the JSON-LD "@id" IRI). Fixed 2026-09-11: `->toArray()['iid']`
+        // always threw "Undefined array key" - this is the first time this
+        // test class actually ran to completion (previously blocked by the
+        // "test.service_container"/test-DB environment gap documented in
+        // this class's own docblock above), which is how this latent bug
+        // went undetected until now.
+        $responseData = $response->toArray();
+        $assignmentId = (int) \substr((string) $responseData['@id'], \strrpos((string) $responseData['@id'], '/') + 1);
 
         $em->clear();
 
@@ -151,13 +169,15 @@ final class CHomeworkAssignmentPostStateProcessorTest extends AbstractApiTest
     }
 
     /**
-     * Regression guard for the LinkFactory gap documented in
-     * saveGradebookConfig(): LinkFactory::create() has no case for
-     * LINK_HOMEWORK (no HomeworkLink class exists yet), so
-     * GradebookUtils::add_resource_to_course_gradebook() must never actually
-     * be reached for a homework assignment today - it would fatal-error
-     * (null->set_user_id()) if it were. This proves a teacher checking "add
-     * to gradebook" with a real category id does not crash the request.
+     * Regression guard for the LinkFactory gap that used to exist in
+     * saveGradebookConfig(): LinkFactory::create() had no case for
+     * LINK_HOMEWORK (no HomeworkLink class existed), so
+     * GradebookUtils::add_resource_to_course_gradebook() fatal-errored
+     * (null->set_user_id()) whenever reached. Fixed 2026-09-11 by
+     * registering HomeworkLink (see public/main/gradebook/lib/be/homeworklink.class.php
+     * and LinkFactory::create()'s LINK_HOMEWORK case) - this test now proves
+     * the fix holds: a teacher checking "add to gradebook" with a real
+     * category id does not crash the request.
      */
     public function testCreatingAssignmentWithAddToGradebookDoesNotFatalError(): void
     {
